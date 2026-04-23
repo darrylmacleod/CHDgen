@@ -1,6 +1,6 @@
 # CHDgen - PCI CHD Flow Diagram Builder
 
-A fully self-contained, browser-based tool for creating **PCI DSS Cardholder Data (CHD) flow diagrams**. Designed for security teams, QSAs, and compliance engineers who need to document, visualize, and communicate how payment card data moves through their environments.
+CHDgen is a fully self-contained, browser-based tool for creating **PCI DSS Cardholder Data (CHD) flow diagrams**. Designed for security teams, QSAs, and compliance engineers who need to document, visualize, and communicate how payment card data moves through their environments.
 
 No installation. No server. No dependencies. Open the HTML file in any modern browser and start diagramming.
 
