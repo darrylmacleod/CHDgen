@@ -262,17 +262,33 @@ function edgePath(e) {
   const tgt = S.nodes.find(n => n.id===e.targetId);
   if (!src || !tgt) return '';
   const p1 = portPos(src, e.srcPort), p2 = portPos(tgt, e.tgtPort);
-  const dist = Math.hypot(p2.x-p1.x, p2.y-p1.y);
-  const C = Math.min(Math.max(dist*0.45, 50), 160);
-  const c1 = portCtrl(src, e.srcPort, C), c2 = portCtrl(tgt, e.tgtPort, C);
-  return `M${p1.x},${p1.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${p2.x},${p2.y}`;
+  const sp = e.srcPort, tp = e.tgtPort;
+  const hSrc = sp==='e' || sp==='w';
+  const hTgt = tp==='e' || tp==='w';
+  if (hSrc && hTgt) {
+    // Both horizontal ports: Z-shape through vertical midpoint
+    const mx = (p1.x + p2.x) / 2;
+    return `M${p1.x},${p1.y} L${mx},${p1.y} L${mx},${p2.y} L${p2.x},${p2.y}`;
+  } else if (!hSrc && !hTgt) {
+    // Both vertical ports: Z-shape through horizontal midpoint
+    const my = (p1.y + p2.y) / 2;
+    return `M${p1.x},${p1.y} L${p1.x},${my} L${p2.x},${my} L${p2.x},${p2.y}`;
+  } else if (hSrc && !hTgt) {
+    // Source horizontal, target vertical: single L-bend
+    return `M${p1.x},${p1.y} L${p2.x},${p1.y} L${p2.x},${p2.y}`;
+  } else {
+    // Source vertical, target horizontal: single L-bend
+    return `M${p1.x},${p1.y} L${p1.x},${p2.y} L${p2.x},${p2.y}`;
+  }
 }
 
-function bezMid(p1, c1, c2, p2) {
-  return {
-    x: 0.125*p1.x + 0.375*c1.x + 0.375*c2.x + 0.125*p2.x,
-    y: 0.125*p1.y + 0.375*c1.y + 0.375*c2.y + 0.125*p2.y,
-  };
+function orthMid(p1, p2, sp, tp) {
+  const hSrc = sp==='e' || sp==='w';
+  const hTgt = tp==='e' || tp==='w';
+  if (hSrc && hTgt) { return { x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2 }; }
+  if (!hSrc && !hTgt) { return { x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2 }; }
+  if (hSrc && !hTgt)  { return { x:p2.x, y:p1.y }; }
+  return { x:p1.x, y:p2.y };
 }
 
 function bestPorts(a, b) {
@@ -453,10 +469,7 @@ function updEdgeEl(g, edge) {
   const src = S.nodes.find(n => n.id===edge.sourceId);
   const tgt = S.nodes.find(n => n.id===edge.targetId);
   const p1  = portPos(src, edge.srcPort), p2 = portPos(tgt, edge.tgtPort);
-  const dist = Math.hypot(p2.x-p1.x, p2.y-p1.y);
-  const C    = Math.min(Math.max(dist*0.45, 50), 160);
-  const c1   = portCtrl(src, edge.srcPort, C), c2 = portCtrl(tgt, edge.tgtPort, C);
-  const mid  = bezMid(p1, c1, c2, p2);
+  const mid = orthMid(p1, p2, edge.srcPort, edge.tgtPort);
 
   g.querySelector('.edge-hit').setAttribute('d', d);
   const line = g.querySelector('.edge-line');
