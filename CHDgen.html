@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCI CHD Flow Diagram Builder</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; color: #1e293b; height: 100vh; display: flex; flex-direction: column; overflow: hidden; user-select: none; }
+
+#toolbar {
+  background: #1e293b; padding: 7px 12px; display: flex; align-items: center;
+  gap: 6px; flex-shrink: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.logo { font-size: 13px; font-weight: 700; color: #f8fafc; margin-right: 6px; white-space: nowrap; }
+.logo span { color: #ef4444; }
+.tbtn {
+  background: #334155; color: #e2e8f0; border: 1px solid #475569; border-radius: 5px;
+  padding: 4px 9px; font-size: 11px; cursor: pointer; display: flex; align-items: center;
+  gap: 4px; white-space: nowrap; transition: background 0.1s;
+}
+.tbtn:hover { background: #475569; }
+.tbtn.active { background: #1d4ed8; border-color: #60a5fa; color: #fff; }
+.tbtn.danger:hover { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
+.tsep { width: 1px; height: 18px; background: #475569; flex-shrink: 0; }
+.zoom-lbl { font-size: 11px; color: #94a3b8; min-width: 34px; text-align: center; }
+.spacer { flex: 1; }
+
+#main { display: flex; flex: 1; overflow: hidden; }
+
+#sidebar {
+  width: 190px; background: #fff; border-right: 1px solid #e2e8f0;
+  overflow-y: auto; flex-shrink: 0;
+}
+.cat-hdr {
+  padding: 7px 10px 3px; font-size: 10px; font-weight: 700; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: 0.05em; border-top: 1px solid #f1f5f9; margin-top: 2px;
+}
+.cat-hdr:first-child { border-top: none; margin-top: 0; }
+.sitem {
+  display: flex; align-items: center; gap: 7px; padding: 4px 8px; cursor: pointer;
+  border-radius: 5px; margin: 1px 4px; border: 1px solid transparent; transition: background 0.1s;
+}
+.sitem:hover { background: #f1f5f9; }
+.sitem.active { background: #eff6ff; border-color: #bfdbfe; }
+.sitem-ic { width: 22px; height: 22px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.sitem-lbl { font-size: 11px; color: #475569; }
+
+#canvas-wrap {
+  flex: 1; position: relative; overflow: hidden; background: #f1f5f9;
+  background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+  background-size: 22px 22px; cursor: default;
+}
+#canvas-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+#canvas-svg.placing { cursor: crosshair; }
+
+#props {
+  width: 200px; background: #fff; border-left: 1px solid #e2e8f0;
+  flex-shrink: 0; overflow-y: auto; display: none;
+}
+#props.show { display: block; }
+.props-hdr { padding: 9px 12px; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; letter-spacing: 0.04em; }
+.props-sect { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; }
+.props-sect label { display: block; font-size: 10px; color: #94a3b8; margin-bottom: 3px; font-weight: 600; text-transform: uppercase; }
+.props-sect input, .props-sect select, .props-sect textarea {
+  width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 5px 7px;
+  font-size: 11px; color: #1e293b; background: #f8fafc; font-family: inherit;
+}
+.props-sect input:focus, .props-sect select:focus, .props-sect textarea:focus { outline: none; border-color: #3b82f6; background: #fff; }
+.props-sect textarea { resize: vertical; min-height: 55px; }
+.warn-badge { margin: 8px; padding: 7px 9px; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; font-size: 10px; color: #991b1b; line-height: 1.5; }
+.ok-badge   { margin: 8px; padding: 7px 9px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; font-size: 10px; color: #166534; line-height: 1.5; }
+
+#legend {
+  position: absolute; bottom: 10px; right: 10px;
+  background: rgba(255,255,255,0.97); border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 9px 12px; font-size: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); pointer-events: none;
+}
+#legend h4 { font-size: 10px; color: #64748b; margin-bottom: 5px; font-weight: 700; text-transform: uppercase; }
+.leg-row { display: flex; align-items: center; gap: 7px; margin-bottom: 2px; color: #475569; }
+.leg-line { height: 2px; width: 20px; border-radius: 1px; flex-shrink: 0; }
+.leg-dash { width: 20px; height: 0; border-top: 2px dashed; flex-shrink: 0; }
+
+#hint-bar {
+  position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  background: rgba(30,41,59,0.88); color: #e2e8f0; border-radius: 20px;
+  padding: 4px 14px; font-size: 11px; pointer-events: none; transition: opacity 0.3s;
+  white-space: nowrap; z-index: 10;
+}
+#hint-bar.hide { opacity: 0; }
+
+#ctx-menu {
+  position: fixed; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 4px; z-index: 1000; min-width: 150px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12); display: none;
+}
+.cx-item { padding: 6px 10px; font-size: 11px; cursor: pointer; border-radius: 4px; color: #374151; display: flex; align-items: center; gap: 7px; }
+.cx-item:hover { background: #f1f5f9; }
+.cx-item.danger { color: #dc2626; }
+.cx-item.danger:hover { background: #fef2f2; }
+.cx-sep { height: 1px; background: #f1f5f9; margin: 3px 0; }
+
+#toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #f1f5f9; border-radius: 8px; padding: 7px 16px; font-size: 11px; z-index: 2000; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+#toast.show { opacity: 1; }
+
+.node { cursor: move; }
+.node .port { opacity: 0; cursor: crosshair; transition: opacity 0.12s; }
+.node:hover .port { opacity: 1; }
+.edge-line { fill: none; pointer-events: none; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <div class="logo">PCI <span>CHD</span> Flow Builder</div>
+  <div class="tsep"></div>
+  <button class="tbtn" onclick="newDiagram()" title="Clear canvas">⬜ New</button>
+  <button class="tbtn" onclick="fitView()" title="Fit all nodes in view">⊡ Fit</button>
+  <div class="tsep"></div>
+  <button class="tbtn" id="btnConnect" onclick="toggleConnectMode()" title="Click-to-connect mode">🔗 Connect</button>
+  <div class="tsep"></div>
+  <button class="tbtn" onclick="saveDiagram()" title="Save diagram to JSON file">💾 Save</button>
+  <button class="tbtn" onclick="loadDiagram()" title="Load diagram from JSON file">📂 Load</button>
+  <input type="file" id="file-input" accept=".json" style="display:none" onchange="onFileLoad(event)"/>
+  <div class="tsep"></div>
+  <button class="tbtn" onclick="exportSVG()">↓ SVG</button>
+  <button class="tbtn" onclick="exportPNG()">↓ PNG</button>
+  <button class="tbtn" onclick="exportPDF()">↓ PDF</button>
+  <div class="tsep"></div>
+  <button class="tbtn" onclick="zoomOut()">－</button>
+  <span class="zoom-lbl" id="zoomLbl">100%</span>
+  <button class="tbtn" onclick="zoomIn()">＋</button>
+  <div class="spacer"></div>
+  <button class="tbtn danger" onclick="deleteSelected()" title="Delete selected (Del)">✕ Delete</button>
+</div>
+
+<div id="main">
+  <div id="sidebar"></div>
+
+  <div id="canvas-wrap">
+    <svg id="canvas-svg" xmlns="http://www.w3.org/2000/svg">
+      <defs id="svg-defs"></defs>
+      <rect id="canvas-bg" fill="transparent" width="100%" height="100%"/>
+      <g id="viewport">
+        <g id="edges-layer"></g>
+        <g id="nodes-layer"></g>
+        <line id="rubber-band" stroke="#3b82f6" stroke-width="2" stroke-dasharray="5,4"
+              style="display:none; pointer-events:none;"/>
+      </g>
+    </svg>
+    <div id="hint-bar" class="hide"></div>
+    <div id="legend">
+      <h4>Data Flow Types</h4>
+      <div class="leg-row"><div class="leg-dash" style="color:#ef4444"></div> ⚠️ Unencrypted PAN</div>
+      <div class="leg-row"><div class="leg-line" style="background:#3b82f6"></div> 🔒 Encrypted PAN</div>
+      <div class="leg-row"><div class="leg-line" style="background:#10b981"></div> 🔐 Tokenized</div>
+      <div class="leg-row"><div class="leg-line" style="background:#8b5cf6"></div> 🔄 Authorization</div>
+      <div class="leg-row"><div class="leg-line" style="background:#f59e0b"></div> 💰 Settlement</div>
+      <div class="leg-row"><div class="leg-dash" style="color:#9ca3af"></div> Out of Scope</div>
+      <div class="leg-row"><div class="leg-line" style="background:#64748b"></div> Generic Flow</div>
+    </div>
+  </div>
+
+  <div id="props">
+    <div class="props-hdr" id="props-hdr">Properties</div>
+    <div id="props-content"></div>
+  </div>
+</div>
+
+<div id="ctx-menu">
+  <div class="cx-item" onclick="ctxEdit()">✏️ Edit Label</div>
+  <div class="cx-sep"></div>
+  <div class="cx-item danger" onclick="ctxDelete()">🗑 Delete</div>
+</div>
+<div id="toast"></div>
+
+<script>
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+const NW = 145, NH = 68;
+const NS = 'http://www.w3.org/2000/svg';
+const CATS = ['Actors','Devices','Systems','Security','Storage','External'];
+
+const NT = {
+  cardholder:    { label:'Cardholder',          emoji:'👤', color:'#10b981', cat:'Actors'   },
+  merchant:      { label:'Merchant',             emoji:'🏪', color:'#0891b2', cat:'Actors'   },
+  pos:           { label:'POS Terminal',         emoji:'💳', color:'#3b82f6', cat:'Devices'  },
+  atm:           { label:'ATM',                  emoji:'🏧', color:'#2563eb', cat:'Devices'  },
+  card_reader:   { label:'Card Reader',          emoji:'🔖', color:'#2563eb', cat:'Devices'  },
+  mobile:        { label:'Mobile Device',        emoji:'📱', color:'#6366f1', cat:'Devices'  },
+  browser:       { label:'Web Browser',          emoji:'🌐', color:'#6366f1', cat:'Devices'  },
+  kiosk:         { label:'Kiosk',                emoji:'🖥', color:'#6366f1', cat:'Devices'  },
+  payment_app:   { label:'Payment App',          emoji:'⚙️', color:'#0369a1', cat:'Systems'  },
+  web_server:    { label:'Web Server',           emoji:'🗄', color:'#0369a1', cat:'Systems'  },
+  app_server:    { label:'App Server',           emoji:'📦', color:'#0369a1', cat:'Systems'  },
+  gateway:       { label:'Payment Gateway',      emoji:'🔀', color:'#0369a1', cat:'Systems'  },
+  load_balancer: { label:'Load Balancer',        emoji:'⚖️', color:'#0284c7', cat:'Systems'  },
+  api_server:    { label:'API Server',           emoji:'🔌', color:'#0284c7', cat:'Systems'  },
+  firewall:      { label:'Firewall',             emoji:'🔥', color:'#d97706', cat:'Security' },
+  waf:           { label:'WAF',                  emoji:'🛡', color:'#d97706', cat:'Security' },
+  ids:           { label:'IDS/IPS',              emoji:'🔍', color:'#b45309', cat:'Security' },
+  hsm:           { label:'HSM',                  emoji:'🔑', color:'#92400e', cat:'Security' },
+  tokenization:  { label:'Tokenization Vault',   emoji:'🔐', color:'#78350f', cat:'Security' },
+  p2pe:          { label:'P2PE Device',          emoji:'🔒', color:'#92400e', cat:'Security' },
+  chd_db:        { label:'CHD Database',         emoji:'🗄', color:'#dc2626', cat:'Storage'  },
+  log_server:    { label:'Log Server',           emoji:'📋', color:'#64748b', cat:'Storage'  },
+  backup:        { label:'Backup System',        emoji:'💾', color:'#64748b', cat:'Storage'  },
+  card_network:  { label:'Card Network',         emoji:'🌐', color:'#7c3aed', cat:'External' },
+  acq_bank:      { label:'Acquiring Bank',       emoji:'🏦', color:'#1d4ed8', cat:'External' },
+  iss_bank:      { label:'Issuing Bank',         emoji:'🏛', color:'#1d4ed8', cat:'External' },
+  psp:           { label:'PSP / Processor',      emoji:'💱', color:'#1e40af', cat:'External' },
+};
+
+const ET = {
+  pan:        { label:'⚠️ Unencrypted PAN', color:'#ef4444', dash:'7,5' },
+  encrypted:  { label:'🔒 Encrypted PAN',   color:'#3b82f6', dash:''    },
+  tokenized:  { label:'🔐 Tokenized',       color:'#10b981', dash:''    },
+  auth:       { label:'🔄 Authorization',   color:'#8b5cf6', dash:''    },
+  settlement: { label:'💰 Settlement',      color:'#f59e0b', dash:''    },
+  outofscope: { label:'⬜ Out of Scope',    color:'#9ca3af', dash:'4,4' },
+  generic:    { label:'→ Generic Flow',     color:'#64748b', dash:''    },
+};
+
+const PD = {
+  n: { px:0.5, py:0,   ox:0,  oy:-1, bx:0,  by:-6 },
+  s: { px:0.5, py:1,   ox:0,  oy:1,  bx:0,  by:6  },
+  e: { px:1,   py:0.5, ox:1,  oy:0,  bx:6,  by:0  },
+  w: { px:0,   py:0.5, ox:-1, oy:0,  bx:-6, by:0  },
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const S = {
+  nodes:[], edges:[], selected:null,
+  placing:null, connectMode:false, connectFrom:null,
+  dragging:null, panning:null,
+  pan:{x:0,y:0}, zoom:1, nid:1, eid:1, ctxTarget:null,
+};
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function svgCoord(sx, sy) {
+  const r = $('canvas-svg').getBoundingClientRect();
+  return { x:(sx-r.left-S.pan.x)/S.zoom, y:(sy-r.top-S.pan.y)/S.zoom };
+}
+
+function portPos(node, p) {
+  const d = PD[p];
+  return { x:node.x + d.px*NW + d.bx, y:node.y + d.py*NH + d.by };
+}
+
+function portCtrl(node, p, C) {
+  const d = PD[p], pp = portPos(node, p);
+  return { x:pp.x + d.ox*C, y:pp.y + d.oy*C };
+}
+
+function edgePath(e) {
+  const src = S.nodes.find(n => n.id===e.sourceId);
+  const tgt = S.nodes.find(n => n.id===e.targetId);
+  if (!src || !tgt) return '';
+  const p1 = portPos(src, e.srcPort), p2 = portPos(tgt, e.tgtPort);
+  const dist = Math.hypot(p2.x-p1.x, p2.y-p1.y);
+  const C = Math.min(Math.max(dist*0.45, 50), 160);
+  const c1 = portCtrl(src, e.srcPort, C), c2 = portCtrl(tgt, e.tgtPort, C);
+  return `M${p1.x},${p1.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${p2.x},${p2.y}`;
+}
+
+function bezMid(p1, c1, c2, p2) {
+  return {
+    x: 0.125*p1.x + 0.375*c1.x + 0.375*c2.x + 0.125*p2.x,
+    y: 0.125*p1.y + 0.375*c1.y + 0.375*c2.y + 0.125*p2.y,
+  };
+}
+
+function bestPorts(a, b) {
+  const dx = b.x+NW/2 - (a.x+NW/2), dy = b.y+NH/2 - (a.y+NH/2);
+  if (Math.abs(dx) >= Math.abs(dy)) return { sp: dx>0?'e':'w', tp: dx>0?'w':'e' };
+  return { sp: dy>0?'s':'n', tp: dy>0?'n':'s' };
+}
+
+function closestPort(node, cx, cy) {
+  let best = null, bestD = Infinity;
+  for (const p of ['n','s','e','w']) {
+    const pp = portPos(node, p);
+    const d = Math.hypot(pp.x-cx, pp.y-cy);
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  return best;
+}
+
+function nodeAt(cx, cy, excl) {
+  for (const n of S.nodes) {
+    if (n.id === excl) continue;
+    if (cx>=n.x-8 && cx<=n.x+NW+8 && cy>=n.y-8 && cy<=n.y+NH+8) return n;
+  }
+  return null;
+}
+
+function mkId(p) { return p==='n' ? 'n'+(S.nid++) : 'e'+(S.eid++); }
+
+function toast(msg, dur=2200) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function hint(msg) {
+  const h = $('hint-bar');
+  if (msg) { h.textContent = msg; h.classList.remove('hide'); }
+  else h.classList.add('hide');
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── SVG DEFS ─────────────────────────────────────────────────────────────────
+function initDefs() {
+  const d = $('svg-defs');
+  let h = '<filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">' +
+          '<feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.1)"/></filter>';
+  for (const [k, et] of Object.entries(ET)) {
+    h += `<marker id="arr-${k}" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">` +
+         `<polygon points="0 0,10 3.5,0 7" fill="${et.color}"/></marker>`;
+  }
+  d.innerHTML = h;
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function renderAll() { renderEdges(); renderNodes(); updateVP(); }
+
+function updateVP() {
+  $('viewport').setAttribute('transform', `translate(${S.pan.x},${S.pan.y}) scale(${S.zoom})`);
+  $('zoomLbl').textContent = Math.round(S.zoom*100) + '%';
+}
+
+function renderNodes() {
+  const layer = $('nodes-layer');
+  const ids = new Set(S.nodes.map(n => n.id));
+  layer.querySelectorAll('.node').forEach(el => { if (!ids.has(el.dataset.id)) el.remove(); });
+  for (const node of S.nodes) {
+    let g = layer.querySelector(`.node[data-id="${node.id}"]`);
+    if (!g) { g = mkNodeEl(node); layer.appendChild(g); }
+    updNodeEl(g, node);
+  }
+}
+
+function mkNodeEl(node) {
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('class', 'node');
+  g.dataset.id = node.id;
+
+  function mk(tag, attrs={}) {
+    const el = document.createElementNS(NS, tag);
+    for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
+    g.appendChild(el); return el;
+  }
+
+  mk('rect', { x:'-8', y:'-8', width:NW+16, height:NH+16, rx:'10',
+               fill:'transparent', 'pointer-events':'all', class:'node-hit' });
+  mk('rect', { x:'2', y:'3', width:NW, height:NH, rx:'8', fill:'rgba(0,0,0,0.07)' });
+  mk('rect', { width:NW, height:NH, rx:'8', fill:'#fff',
+               stroke:'#e2e8f0', 'stroke-width':'1.5', class:'node-body' });
+  mk('rect', { width:'5', height:NH, rx:'3', class:'node-accent' });
+  mk('rect', { x:'3', width:'2', height:NH, class:'node-accent-sq' });
+  mk('circle', { cx:'31', cy:NH/2, r:'16', class:'node-ic-bg' });
+  mk('text',   { x:'31', y:NH/2+7, 'text-anchor':'middle', 'font-size':'17',
+                 class:'node-ico', 'dominant-baseline':'auto' });
+  mk('text',   { x:'88', y:NH/2-6, 'text-anchor':'middle', 'font-size':'12',
+                 'font-weight':'600', fill:'#1e293b', class:'node-lbl' });
+  mk('text',   { x:'88', y:NH/2+11, 'text-anchor':'middle', 'font-size':'9.5',
+                 fill:'#94a3b8', class:'node-sub' });
+
+  for (const [pk, pd] of Object.entries(PD)) {
+    const p = mk('circle', {
+      cx: pd.px*NW+pd.bx, cy: pd.py*NH+pd.by, r:'6',
+      fill:'#fff', stroke:'#3b82f6', 'stroke-width':'2', class:'port'
+    });
+    p.dataset.port = pk;
+    p.addEventListener('mousedown', onPortDown);
+  }
+
+  mk('rect', { x:'-4', y:'-4', width:NW+8, height:NH+8, rx:'10',
+               fill:'none', stroke:'#3b82f6', 'stroke-width':'2',
+               display:'none', class:'sel-ring' });
+
+  g.addEventListener('mousedown', onNodeDown);
+  g.addEventListener('dblclick',  onNodeDbl);
+  g.addEventListener('contextmenu', onNodeCtx);
+  return g;
+}
+
+function updNodeEl(g, node) {
+  const nt = NT[node.type], c = nt.color;
+  g.setAttribute('transform', `translate(${node.x},${node.y})`);
+  g.querySelector('.node-accent').setAttribute('fill', c);
+  g.querySelector('.node-accent-sq').setAttribute('fill', c);
+  const icBg = g.querySelector('.node-ic-bg');
+  icBg.setAttribute('fill', c);
+  icBg.setAttribute('opacity', '0.13');
+  g.querySelector('.node-ico').textContent = nt.emoji;
+  g.querySelector('.node-lbl').textContent = node.label || nt.label;
+  g.querySelector('.node-sub').textContent = nt.label;
+  const sel = S.selected?.type==='node' && S.selected?.id===node.id;
+  g.querySelector('.sel-ring').setAttribute('display', sel ? '' : 'none');
+  const body = g.querySelector('.node-body');
+  body.setAttribute('stroke', sel ? '#3b82f6' : '#e2e8f0');
+  body.setAttribute('stroke-width', sel ? '2' : '1.5');
+}
+
+function renderEdges() {
+  const layer = $('edges-layer');
+  const ids = new Set(S.edges.map(e => e.id));
+  layer.querySelectorAll('.edge').forEach(el => { if (!ids.has(el.dataset.id)) el.remove(); });
+  for (const edge of S.edges) {
+    let g = layer.querySelector(`.edge[data-id="${edge.id}"]`);
+    if (!g) { g = mkEdgeEl(edge); layer.appendChild(g); }
+    updEdgeEl(g, edge);
+  }
+}
+
+function mkEdgeEl(edge) {
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('class', 'edge');
+  g.dataset.id = edge.id;
+
+  function mk(tag, attrs={}) {
+    const el = document.createElementNS(NS, tag);
+    for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
+    g.appendChild(el); return el;
+  }
+
+  mk('path', { stroke:'transparent', 'stroke-width':'14', fill:'none',
+               cursor:'pointer', class:'edge-hit' });
+  mk('path', { 'stroke-width':'2.5', class:'edge-line' });
+  mk('rect', { rx:'3', fill:'#fff', stroke:'#e2e8f0', 'stroke-width':'1', class:'edge-lbg' });
+  mk('text', { 'text-anchor':'middle', 'font-size':'10', fill:'#475569', class:'edge-ltxt' });
+
+  g.addEventListener('mousedown', onEdgeDown);
+  g.addEventListener('contextmenu', onEdgeCtx);
+  return g;
+}
+
+function updEdgeEl(g, edge) {
+  const et = ET[edge.type||'generic'];
+  const d = edgePath(edge); if (!d) return;
+
+  const src = S.nodes.find(n => n.id===edge.sourceId);
+  const tgt = S.nodes.find(n => n.id===edge.targetId);
+  const p1  = portPos(src, edge.srcPort), p2 = portPos(tgt, edge.tgtPort);
+  const dist = Math.hypot(p2.x-p1.x, p2.y-p1.y);
+  const C    = Math.min(Math.max(dist*0.45, 50), 160);
+  const c1   = portCtrl(src, edge.srcPort, C), c2 = portCtrl(tgt, edge.tgtPort, C);
+  const mid  = bezMid(p1, c1, c2, p2);
+
+  g.querySelector('.edge-hit').setAttribute('d', d);
+  const line = g.querySelector('.edge-line');
+  line.setAttribute('d', d);
+  line.setAttribute('stroke', et.color);
+  line.setAttribute('stroke-dasharray', et.dash||'');
+  line.setAttribute('marker-end', `url(#arr-${edge.type||'generic'})`);
+  const sel = S.selected?.type==='edge' && S.selected?.id===edge.id;
+  line.setAttribute('stroke-width', sel ? '3.5' : '2.5');
+  line.setAttribute('opacity', sel ? '1' : '0.88');
+
+  const lbl = edge.label||'';
+  const lbg = g.querySelector('.edge-lbg'), ltxt = g.querySelector('.edge-ltxt');
+  if (lbl) {
+    const w = lbl.length*6.2 + 12;
+    ltxt.setAttribute('x', mid.x); ltxt.setAttribute('y', mid.y+4); ltxt.textContent = lbl;
+    lbg.setAttribute('x', mid.x-w/2); lbg.setAttribute('y', mid.y-9);
+    lbg.setAttribute('width', w);     lbg.setAttribute('height', 14);
+    lbg.setAttribute('display', '');  ltxt.setAttribute('display', '');
+  } else {
+    lbg.setAttribute('display', 'none'); ltxt.setAttribute('display', 'none');
+  }
+}
+
+// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
+function buildSidebar() {
+  let h = '';
+  for (const cat of CATS) {
+    const items = Object.entries(NT).filter(([,v]) => v.cat===cat);
+    if (!items.length) continue;
+    h += `<div class="cat-hdr">${cat}</div>`;
+    for (const [k, nt] of items) {
+      h += `<div class="sitem" data-type="${k}" onclick="startPlace('${k}')">
+        <div class="sitem-ic" style="background:${nt.color}18">${nt.emoji}</div>
+        <div class="sitem-lbl">${nt.label}</div>
+      </div>`;
+    }
+  }
+  $('sidebar').innerHTML = h;
+}
+
+function startPlace(type) {
+  if (S.placing===type) { cancelPlace(); return; }
+  S.placing = type; S.connectMode = false; S.connectFrom = null;
+  $('btnConnect').classList.remove('active');
+  document.querySelectorAll('.sitem').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.sitem[data-type="${type}"]`)?.classList.add('active');
+  $('canvas-svg').classList.add('placing');
+  hint(`Click canvas to place ${NT[type].label} — Esc to cancel`);
+}
+
+function cancelPlace() {
+  S.placing = null;
+  document.querySelectorAll('.sitem').forEach(el => el.classList.remove('active'));
+  $('canvas-svg').classList.remove('placing');
+  hint();
+}
+
+// ─── PROPERTIES PANEL ─────────────────────────────────────────────────────────
+function showProps() {
+  const panel = $('props'), content = $('props-content'), hdr = $('props-hdr');
+  if (!S.selected) { panel.classList.remove('show'); return; }
+  panel.classList.add('show');
+
+  if (S.selected.type==='node') {
+    const node = S.nodes.find(n => n.id===S.selected.id); if (!node) return;
+    const nt = NT[node.type];
+    hdr.textContent = nt.label;
+    let h = `<div class="props-sect"><label>Label</label>
+      <input value="${esc(node.label||nt.label)}" onchange="updNode('label',this.value)"/>
+    </div><div class="props-sect"><label>Notes</label>
+      <textarea onchange="updNode('notes',this.value)">${esc(node.notes||'')}</textarea>
+    </div>`;
+    if (node.type==='chd_db')
+      h += `<div class="warn-badge">⚠️ Stores CHD — encrypt at rest (Req 3.5). Minimize data stored.</div>`;
+    if (node.type==='pos' || node.type==='card_reader')
+      h += `<div class="warn-badge">📋 POI device — PTS validation & tamper protection required (Req 9.9).</div>`;
+    if (node.type==='firewall')
+      h += `<div class="ok-badge">✅ Segment & restrict traffic per Req 1. Document all rules.</div>`;
+    if (node.type==='tokenization')
+      h += `<div class="ok-badge">✅ Tokenization reduces PCI scope. Confirm vault placement.</div>`;
+    if (node.type==='hsm')
+      h += `<div class="ok-badge">✅ HSM required for key management (Req 3.7). Use FIPS 140-2 validated device.</div>`;
+    content.innerHTML = h;
+  } else {
+    const edge = S.edges.find(e => e.id===S.selected.id); if (!edge) return;
+    hdr.textContent = 'Connection';
+    const opts = Object.entries(ET)
+      .map(([k,v]) => `<option value="${k}"${edge.type===k?' selected':''}>${v.label}</option>`)
+      .join('');
+    let h = `<div class="props-sect"><label>Flow Type</label>
+      <select onchange="updEdge('type',this.value)">${opts}</select>
+    </div><div class="props-sect"><label>Label</label>
+      <input value="${esc(edge.label||'')}" onchange="updEdge('label',this.value)" placeholder="e.g. PAN + CVV"/>
+    </div>`;
+    if (edge.type==='pan')
+      h += `<div class="warn-badge">🚨 Unencrypted PAN violates Req 4.2.1! Use TLS encryption or tokenize before transit.</div>`;
+    if (edge.type==='encrypted')
+      h += `<div class="ok-badge">✅ Use TLS 1.2+ with strong cipher suites (Req 4.2.1).</div>`;
+    if (edge.type==='tokenized')
+      h += `<div class="ok-badge">✅ Tokenized data is out of PCI scope if vault is properly segmented.</div>`;
+    content.innerHTML = h;
+  }
+}
+
+function updNode(k, v) {
+  const n = S.nodes.find(n => n.id===S.selected?.id);
+  if (n) { n[k] = v; renderNodes(); }
+}
+function updEdge(k, v) {
+  const e = S.edges.find(e => e.id===S.selected?.id);
+  if (e) { e[k] = v; renderEdges(); showProps(); }
+}
+
+// ─── SELECTION ────────────────────────────────────────────────────────────────
+function select(type, id) {
+  S.selected = id ? {type, id} : null;
+  renderAll(); showProps();
+}
+
+// ─── EVENT HANDLERS ───────────────────────────────────────────────────────────
+function onNodeDown(e) {
+  if (S.placing) return;
+  if (e.target.classList.contains('port')) return;
+  e.stopPropagation();
+  const nodeId = this.dataset.id;
+
+  if (S.connectMode) {
+    const node = S.nodes.find(n => n.id===nodeId);
+    if (!S.connectFrom) {
+      S.connectFrom = {nodeId};
+      hint('Now click another component to connect');
+    } else if (S.connectFrom.nodeId !== nodeId) {
+      const src = S.nodes.find(n => n.id===S.connectFrom.nodeId);
+      const {sp, tp} = bestPorts(src, node);
+      addEdge(S.connectFrom.nodeId, nodeId, sp, tp);
+      S.connectFrom = null;
+      hint('Connect mode: click a component to start');
+    }
+    return;
+  }
+
+  select('node', nodeId);
+  const pos = svgCoord(e.clientX, e.clientY);
+  const node = S.nodes.find(n => n.id===nodeId);
+  S.dragging = {nodeId, mx:pos.x, my:pos.y, ox:node.x, oy:node.y};
+}
+
+function onPortDown(e) {
+  e.stopPropagation(); e.preventDefault();
+  const g = this.closest('.node'), nodeId = g.dataset.id, port = this.dataset.port;
+  const node = S.nodes.find(n => n.id===nodeId);
+  const pp = portPos(node, port);
+  S.connectFrom = {nodeId, port, x:pp.x, y:pp.y};
+  const rb = $('rubber-band');
+  rb.setAttribute('x1', pp.x); rb.setAttribute('y1', pp.y);
+  rb.setAttribute('x2', pp.x); rb.setAttribute('y2', pp.y);
+  rb.style.display = '';
+}
+
+function onEdgeDown(e) {
+  if (S.placing) return;
+  e.stopPropagation();
+  select('edge', this.dataset.id);
+}
+
+function onNodeCtx(e) {
+  e.preventDefault(); e.stopPropagation();
+  const id = this.dataset.id; select('node', id);
+  showCtx(e.clientX, e.clientY, {type:'node', id});
+}
+
+function onEdgeCtx(e) {
+  e.preventDefault(); e.stopPropagation();
+  const id = this.dataset.id; select('edge', id);
+  showCtx(e.clientX, e.clientY, {type:'edge', id});
+}
+
+function onNodeDbl(e) {
+  e.stopPropagation();
+  const id = this.dataset.id;
+  const node = S.nodes.find(n => n.id===id); if (!node) return;
+  const nt = NT[node.type];
+  const v = prompt('Edit label:', node.label||nt.label);
+  if (v !== null) { node.label = v.trim()||nt.label; renderNodes(); showProps(); }
+}
+
+// ─── CANVAS EVENTS ────────────────────────────────────────────────────────────
+$('canvas-svg').addEventListener('mousedown', e => {
+  const tgt = e.target;
+  if (tgt.id==='canvas-bg' || tgt===$('viewport') || tgt===$('canvas-svg')) {
+    if (S.placing) {
+      const pos = svgCoord(e.clientX, e.clientY);
+      addNode(S.placing, pos.x-NW/2, pos.y-NH/2);
+      return;
+    }
+    S.panning = {mx:e.clientX, my:e.clientY, opx:S.pan.x, opy:S.pan.y};
+    select(null, null);
+  }
+});
+
+$('canvas-svg').addEventListener('mousemove', e => {
+  if (S.dragging) {
+    const pos  = svgCoord(e.clientX, e.clientY);
+    const node = S.nodes.find(n => n.id===S.dragging.nodeId); if (!node) return;
+    node.x = S.dragging.ox + (pos.x - S.dragging.mx);
+    node.y = S.dragging.oy + (pos.y - S.dragging.my);
+    // Fast update: only move the node group and its edges
+    const g = $('nodes-layer').querySelector(`.node[data-id="${node.id}"]`);
+    if (g) g.setAttribute('transform', `translate(${node.x},${node.y})`);
+    S.edges.filter(e => e.sourceId===node.id || e.targetId===node.id).forEach(edge => {
+      const eg = $('edges-layer').querySelector(`.edge[data-id="${edge.id}"]`);
+      if (eg) updEdgeEl(eg, edge);
+    });
+  } else if (S.connectFrom && !S.connectMode) {
+    const pos = svgCoord(e.clientX, e.clientY);
+    $('rubber-band').setAttribute('x2', pos.x);
+    $('rubber-band').setAttribute('y2', pos.y);
+  } else if (S.panning) {
+    S.pan.x = S.panning.opx + (e.clientX - S.panning.mx);
+    S.pan.y = S.panning.opy + (e.clientY - S.panning.my);
+    updateVP();
+  }
+});
+
+$('canvas-svg').addEventListener('mouseup', e => {
+  if (S.connectFrom && !S.connectMode) {
+    const pos = svgCoord(e.clientX, e.clientY);
+    const tgt = nodeAt(pos.x, pos.y, S.connectFrom.nodeId);
+    if (tgt) {
+      const sp = S.connectFrom.port ||
+                 closestPort(S.nodes.find(n => n.id===S.connectFrom.nodeId), pos.x, pos.y);
+      const tp = closestPort(tgt, pos.x, pos.y);
+      addEdge(S.connectFrom.nodeId, tgt.id, sp, tp);
+    }
+    $('rubber-band').style.display = 'none';
+    S.connectFrom = null;
+  }
+  S.dragging = null; S.panning = null;
+});
+
+$('canvas-svg').addEventListener('contextmenu', e => e.preventDefault());
+
+$('canvas-svg').addEventListener('wheel', e => {
+  e.preventDefault();
+  const r  = $('canvas-svg').getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  const f  = e.deltaY < 0 ? 1.12 : 0.88;
+  const nz = Math.max(0.15, Math.min(4, S.zoom * f));
+  S.pan.x  = mx - (mx - S.pan.x) * (nz/S.zoom);
+  S.pan.y  = my - (my - S.pan.y) * (nz/S.zoom);
+  S.zoom   = nz;
+  updateVP();
+}, {passive:false});
+
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') {
+    cancelPlace();
+    S.connectMode = false; S.connectFrom = null;
+    $('btnConnect').classList.remove('active');
+    $('rubber-band').style.display = 'none';
+    hint();
+  }
+  if ((e.key==='Delete'||e.key==='Backspace') && !e.target.matches('input,textarea,select')) {
+    deleteSelected();
+  }
+});
+
+document.addEventListener('mousedown', e => {
+  if (!$('ctx-menu').contains(e.target)) hideCtx();
+});
+
+// ─── CONTEXT MENU ─────────────────────────────────────────────────────────────
+function showCtx(x, y, tgt) {
+  S.ctxTarget = tgt;
+  const m = $('ctx-menu');
+  m.style.display = ''; m.style.left = x+'px'; m.style.top = y+'px';
+}
+function hideCtx() { $('ctx-menu').style.display = 'none'; S.ctxTarget = null; }
+function ctxEdit() {
+  hideCtx();
+  if (S.ctxTarget?.type==='node') {
+    const node = S.nodes.find(n => n.id===S.ctxTarget.id); if (!node) return;
+    const v = prompt('Edit label:', node.label||NT[node.type].label);
+    if (v !== null) { node.label = v.trim()||NT[node.type].label; renderNodes(); showProps(); }
+  }
+}
+function ctxDelete() { hideCtx(); if (S.ctxTarget) remove(S.ctxTarget.type, S.ctxTarget.id); }
+
+// ─── ACTIONS ──────────────────────────────────────────────────────────────────
+function addNode(type, x, y) {
+  const id = mkId('n');
+  S.nodes.push({id, type, x, y, label:'', notes:''});
+  renderAll(); select('node', id);
+  toast(`${NT[type].emoji} ${NT[type].label} added`);
+}
+
+function addEdge(sid, tid, sp, tp) {
+  if (S.edges.find(e => e.sourceId===sid && e.targetId===tid && e.srcPort===sp && e.tgtPort===tp)) return;
+  const id = mkId('e');
+  S.edges.push({id, sourceId:sid, targetId:tid, srcPort:sp, tgtPort:tp, type:'generic', label:''});
+  renderAll(); select('edge', id);
+  toast('Connection created — set flow type in Properties ➜');
+}
+
+function remove(type, id) {
+  if (type==='node') {
+    S.nodes = S.nodes.filter(n => n.id!==id);
+    S.edges = S.edges.filter(e => e.sourceId!==id && e.targetId!==id);
+  } else {
+    S.edges = S.edges.filter(e => e.id!==id);
+  }
+  S.selected = null; renderAll(); showProps();
+}
+
+function deleteSelected() { if (S.selected) remove(S.selected.type, S.selected.id); }
+
+function toggleConnectMode() {
+  S.connectMode = !S.connectMode; S.placing = null; S.connectFrom = null; cancelPlace();
+  $('btnConnect').classList.toggle('active', S.connectMode);
+  hint(S.connectMode ? 'Connect mode: click a component to start a connection' : undefined);
+}
+
+function newDiagram() {
+  if (S.nodes.length && !confirm('Clear canvas and start a new diagram?')) return;
+  S.nodes=[]; S.edges=[]; S.selected=null; S.pan={x:0,y:0}; S.zoom=1;
+  S.nid=1; S.eid=1;
+  renderAll(); showProps(); hint();
+}
+
+function fitView() {
+  if (!S.nodes.length) return;
+  const pad=60, r=$('canvas-svg').getBoundingClientRect();
+  let mnx=Infinity, mny=Infinity, mxx=-Infinity, mxy=-Infinity;
+  for (const n of S.nodes) {
+    mnx=Math.min(mnx,n.x); mny=Math.min(mny,n.y);
+    mxx=Math.max(mxx,n.x+NW); mxy=Math.max(mxy,n.y+NH);
+  }
+  const dw=mxx-mnx+pad*2, dh=mxy-mny+pad*2;
+  S.zoom = Math.min(r.width/dw, r.height/dh, 2);
+  S.pan.x = (r.width  - dw*S.zoom)/2 + pad*S.zoom - mnx*S.zoom;
+  S.pan.y = (r.height - dh*S.zoom)/2 + pad*S.zoom - mny*S.zoom;
+  updateVP();
+}
+
+function zoomIn()  { S.zoom = Math.min(4, S.zoom*1.2);   updateVP(); }
+function zoomOut() { S.zoom = Math.max(0.15, S.zoom/1.2); updateVP(); }
+
+// ─── SAVE / LOAD ──────────────────────────────────────────────────────────────
+function saveDiagram() {
+  const data = JSON.stringify({nodes:S.nodes, edges:S.edges, pan:S.pan, zoom:S.zoom}, null, 2);
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([data], {type:'application/json'})),
+    download: 'chd-diagram.json'
+  });
+  a.click();
+  toast('Diagram saved ✓');
+}
+
+function loadDiagram() { $('file-input').click(); }
+
+function onFileLoad(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      S.nodes = data.nodes || [];
+      S.edges = data.edges || [];
+      S.pan   = data.pan  || {x:0, y:0};
+      S.zoom  = data.zoom || 1;
+      S.nid   = Math.max(...S.nodes.map(n => parseInt(n.id.slice(1))||0), 0) + 1;
+      S.eid   = Math.max(...S.edges.map(e => parseInt(e.id.slice(1))||0), 0) + 1;
+      S.selected = null;
+      renderAll(); showProps();
+      toast('Diagram loaded ✓');
+    } catch { toast('Failed to load — invalid file'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
+function getCleanSVG() {
+  const orig = $('canvas-svg');
+  const cl   = orig.cloneNode(true);
+  const bg   = document.createElementNS(NS,'rect');
+  bg.setAttribute('width','100%'); bg.setAttribute('height','100%'); bg.setAttribute('fill','#f8fafc');
+  cl.insertBefore(bg, cl.firstChild);
+  cl.querySelectorAll('#rubber-band,.port,.sel-ring,.node-hit,.edge-hit').forEach(el => el.remove());
+  const r = orig.getBoundingClientRect();
+  cl.setAttribute('width', r.width); cl.setAttribute('height', r.height);
+  return { svgStr: new XMLSerializer().serializeToString(cl), w: r.width, h: r.height };
+}
+
+function exportSVG() {
+  const {svgStr} = getCleanSVG();
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([svgStr], {type:'image/svg+xml'})),
+    download: 'chd-flow-diagram.svg'
+  });
+  a.click(); toast('SVG exported ✓');
+}
+
+function exportPNG() {
+  const {svgStr, w, h} = getCleanSVG();
+  const url = URL.createObjectURL(new Blob([svgStr], {type:'image/svg+xml'}));
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas'), sc = 2;
+    c.width = w*sc; c.height = h*sc;
+    const ctx = c.getContext('2d');
+    ctx.scale(sc, sc);
+    ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    const a = Object.assign(document.createElement('a'), {
+      href: c.toDataURL('image/png'),
+      download: 'chd-flow-diagram.png'
+    });
+    a.click(); toast('PNG exported ✓');
+  };
+  img.onerror = () => { toast('PNG export failed — try SVG'); URL.revokeObjectURL(url); };
+  img.src = url;
+}
+
+function exportPDF() {
+  const {svgStr} = getCleanSVG();
+  const win = window.open('', '_blank');
+  if (!win) { toast('Allow popups for PDF export'); return; }
+  win.document.write(`<!DOCTYPE html><html><head><title>CHD Flow Diagram</title>
+  <style>
+    body { margin:20px; font-family:sans-serif; background:#fff; }
+    h2   { font-size:15px; margin-bottom:4px; color:#1e293b; }
+    p    { font-size:10px; color:#64748b; margin-bottom:14px; }
+    svg  { max-width:100%; border:1px solid #e2e8f0; border-radius:6px; }
+    .btn { margin-top:14px; padding:7px 16px; background:#1e293b; color:#fff; border:none; border-radius:5px; cursor:pointer; font-size:12px; }
+    @media print { .btn { display:none; } }
+  </style></head><body>
+  <h2>PCI DSS Cardholder Data Flow Diagram</h2>
+  <p>Generated: ${new Date().toLocaleDateString()} — For PCI DSS compliance documentation</p>
+  ${svgStr}
+  <br/>
+  <button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button>
+  </body></html>`);
+  win.document.close();
+  toast('Print window opened ✓');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+function init() {
+  initDefs();
+  buildSidebar();
+  const r = $('canvas-svg').getBoundingClientRect();
+  S.pan = { x: r.width/2 - 300, y: r.height/2 - 150 };
+  updateVP();
+
+  // Load sample e-commerce CHD flow
+  setTimeout(() => {
+    const b = {id:mkId('n'), type:'browser',      x:0,   y:80,  label:'Customer Browser', notes:''};
+    const f = {id:mkId('n'), type:'firewall',     x:175, y:-20, label:'Perimeter Firewall', notes:''};
+    const w = {id:mkId('n'), type:'web_server',   x:175, y:80,  label:'E-Commerce Server', notes:''};
+    const g = {id:mkId('n'), type:'gateway',      x:360, y:80,  label:'Payment Gateway', notes:''};
+    const t = {id:mkId('n'), type:'tokenization', x:360, y:-20, label:'Tokenization Vault', notes:''};
+    const d = {id:mkId('n'), type:'chd_db',       x:550, y:80,  label:'CHD Database', notes:''};
+    const c = {id:mkId('n'), type:'card_network', x:550, y:-20, label:'Visa / Mastercard', notes:''};
+    const h = {id:mkId('n'), type:'hsm',          x:550, y:185, label:'HSM', notes:''};
+    S.nodes.push(b, f, w, g, t, d, c, h);
+    S.edges.push(
+      {id:mkId('e'), sourceId:b.id, targetId:w.id, srcPort:'e', tgtPort:'w', type:'encrypted',  label:'PAN (TLS 1.3)'},
+      {id:mkId('e'), sourceId:f.id, targetId:w.id, srcPort:'s', tgtPort:'n', type:'generic',    label:''},
+      {id:mkId('e'), sourceId:w.id, targetId:g.id, srcPort:'e', tgtPort:'w', type:'encrypted',  label:'Encrypted PAN'},
+      {id:mkId('e'), sourceId:g.id, targetId:t.id, srcPort:'n', tgtPort:'s', type:'tokenized',  label:'Tokenize'},
+      {id:mkId('e'), sourceId:t.id, targetId:d.id, srcPort:'e', tgtPort:'w', type:'tokenized',  label:'Token'},
+      {id:mkId('e'), sourceId:g.id, targetId:c.id, srcPort:'n', tgtPort:'w', type:'auth',       label:'Auth Request'},
+      {id:mkId('e'), sourceId:g.id, targetId:h.id, srcPort:'s', tgtPort:'n', type:'encrypted',  label:'Key Request'},
+    );
+    renderAll(); fitView();
+    setTimeout(() => {
+      hint('👋 Sample diagram loaded! Click a component in the sidebar to add more.');
+      setTimeout(() => hint(), 6000);
+    }, 400);
+  }, 100);
+}
+
+init();
+</script>
+</body>
+</html>
