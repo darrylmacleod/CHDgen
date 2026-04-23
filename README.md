@@ -1,6 +1,6 @@
 # PCI CHD Flow Diagram Builder
 
-A fully self-contained, browser-based tool for creating **PCI DSS Cardholder Data (CHD) flow diagrams**. Designed for security teams, QSAs, and compliance engineers who need to document, visualise, and communicate how payment card data moves through their environments.
+A fully self-contained, browser-based tool for creating **PCI DSS Cardholder Data (CHD) flow diagrams**. Designed for security teams, QSAs, and compliance engineers who need to document, visualize, and communicate how payment card data moves through their environments.
 
 No installation. No server. No dependencies. Open the HTML file in any modern browser and start diagramming.
 
@@ -8,7 +8,7 @@ No installation. No server. No dependencies. Open the HTML file in any modern br
 
 ## Why This Exists
 
-PCI DSS requires organisations to maintain accurate data flow diagrams showing how cardholder data (CHD) enters, traverses, and exits their systems (Requirements 1.2.4 and 12.4). These diagrams are reviewed by QSAs during assessments and must clearly distinguish between in-scope and out-of-scope flows, encrypted vs. unencrypted transmission, and where sensitive data is stored.
+PCI DSS requires organizations to maintain accurate data flow diagrams showing how cardholder data (CHD) enters, traverses, and exits their systems (Requirements 1.2.4 and 12.4). These diagrams are reviewed by QSAs during assessments and must clearly distinguish between in-scope and out-of-scope flows, encrypted vs. unencrypted transmission, and where sensitive data is stored.
 
 Most diagramming tools (Visio, Lucidchart, draw.io) are general-purpose — they don't know what a tokenization vault is, they won't warn you when you draw an unencrypted PAN connection, and they can't tell you which PCI DSS requirement applies to the component you just placed.
 
@@ -30,7 +30,7 @@ This tool is built specifically for CHD flow documentation, with PCI-aware compo
 
 ### PCI-Aware Components (27 types)
 
-Components are organised into six categories matching common PCI DSS scoping language:
+Components are organized into six categories matching common PCI DSS scoping language:
 
 | Category | Components |
 |---|---|
@@ -78,7 +78,7 @@ Diagrams can be saved to a `.json` file and reloaded later — preserving all co
 ## Usage
 
 ### Quickstart
-1. Download `chd-flow-diagram-builder.html`
+1. Download `CHDgen.html`
 2. Open it in Chrome, Firefox, Edge, or Safari
 3. A sample e-commerce CHD flow loads automatically as a reference
 4. Click **⬜ New** to clear the canvas and start your own diagram
