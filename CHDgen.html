@@ -111,6 +111,59 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
 
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+/* ── Narrative Modal ─────────────────────────────────────────────── */
+#narrative-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 5000;
+  display: flex; align-items: center; justify-content: center;
+}
+#narrative-modal.hide { display: none; }
+.modal-box {
+  background: #fff; border-radius: 10px; width: 580px; max-width: 95vw;
+  max-height: 88vh; display: flex; flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+}
+.modal-hdr {
+  padding: 13px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px;
+  font-weight: 700; color: #1e293b; display: flex; align-items: center;
+  justify-content: space-between; flex-shrink: 0;
+}
+.modal-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
+.modal-ftr {
+  padding: 10px 16px; border-top: 1px solid #e2e8f0;
+  display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0;
+}
+.mbtn {
+  padding: 6px 14px; border-radius: 5px; font-size: 12px; cursor: pointer;
+  border: 1px solid #e2e8f0; background: #f8fafc; color: #374151;
+  font-family: inherit;
+}
+.mbtn.primary { background: #1e293b; color: #fff; border-color: #1e293b; }
+.mbtn:hover { filter: brightness(0.93); }
+.m-label {
+  font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;
+  letter-spacing: 0.05em; margin-bottom: 5px; margin-top: 14px;
+}
+.m-label:first-child { margin-top: 0; }
+.m-ta {
+  width: 100%; border: 1px solid #e2e8f0; border-radius: 5px;
+  padding: 7px 9px; font-size: 12px; color: #1e293b; font-family: inherit;
+  resize: vertical; min-height: 80px; background: #f8fafc; line-height: 1.5;
+}
+.m-ta:focus, .m-inp:focus { outline: none; border-color: #3b82f6; background: #fff; }
+.m-inp {
+  border: 1px solid #e2e8f0; border-radius: 5px; padding: 5px 9px;
+  font-size: 12px; color: #1e293b; background: #f8fafc; font-family: inherit;
+}
+.m-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.m-row .m-inp { flex: 1; }
+.ver-table { width: 100%; border-collapse: collapse; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
+.ver-table th { background: #f8fafc; padding: 6px 9px; text-align: left; font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 700; border-bottom: 1px solid #e2e8f0; }
+.ver-table td { padding: 6px 9px; border-bottom: 1px solid #f1f5f9; color: #374151; vertical-align: top; }
+.ver-table tr:last-child td { border-bottom: none; }
+.ver-badge { display: inline-block; padding: 1px 8px; border-radius: 20px; background: #eff6ff; color: #1d4ed8; font-size: 10px; font-weight: 700; }
+.ver-del { background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 13px; padding: 0 4px; }
+.ver-del:hover { color: #dc2626; }
 </style>
 </head>
 <body>
@@ -130,6 +183,8 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
   <button class="tbtn" onclick="exportSVG()">↓ SVG</button>
   <button class="tbtn" onclick="exportPNG()">↓ PNG</button>
   <button class="tbtn" onclick="exportPDF()">↓ PDF</button>
+  <div class="tsep"></div>
+  <button class="tbtn" onclick="openNarrative()" title="Diagram narrative & version control">📝 Narrative</button>
   <div class="tsep"></div>
   <button class="tbtn" onclick="zoomOut()">－</button>
   <span class="zoom-lbl" id="zoomLbl">100%</span>
@@ -159,7 +214,9 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
       <div class="leg-row"><div class="leg-line" style="background:#3b82f6"></div> 🔒 Encrypted PAN</div>
       <div class="leg-row"><div class="leg-line" style="background:#10b981"></div> 🔐 Tokenized</div>
       <div class="leg-row"><div class="leg-line" style="background:#8b5cf6"></div> 🔄 Authorization</div>
+      <div class="leg-row"><div class="leg-line" style="background:#059669"></div> 💳 Capture</div>
       <div class="leg-row"><div class="leg-line" style="background:#f59e0b"></div> 💰 Settlement</div>
+      <div class="leg-row"><div class="leg-dash" style="color:#b91c1c"></div> ⛔ SAD</div>
       <div class="leg-row"><div class="leg-dash" style="color:#9ca3af"></div> Out of Scope</div>
       <div class="leg-row"><div class="leg-line" style="background:#64748b"></div> Generic Flow</div>
     </div>
@@ -168,6 +225,42 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
   <div id="props">
     <div class="props-hdr" id="props-hdr">Properties</div>
     <div id="props-content"></div>
+  </div>
+</div>
+
+<!-- ── Narrative & Version Control Modal ── -->
+<div id="narrative-modal" class="hide">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span>📝 Diagram Narrative &amp; Version Control</span>
+      <button class="mbtn" onclick="closeNarrative()" style="padding:2px 9px;font-size:14px">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="m-label">Diagram Narrative</div>
+      <textarea class="m-ta" id="nar-ta" rows="5"
+        placeholder="Describe the cardholder data environment — scope, key data flows, security controls in place, third-party dependencies, and any assumptions or exclusions…"></textarea>
+
+      <div class="m-label" style="margin-top:16px">Current Version</div>
+      <div class="m-row">
+        <input class="m-inp" id="nar-ver" style="width:90px;flex:none" placeholder="e.g. 1.0"/>
+        <span style="font-size:11px;color:#94a3b8">Update this field or use Add Version below</span>
+      </div>
+
+      <div class="m-label" style="margin-top:16px">Version History</div>
+      <table class="ver-table">
+        <thead><tr><th>Version</th><th>Date</th><th>Notes</th><th></th></tr></thead>
+        <tbody id="ver-tbody"><tr><td colspan="4" style="color:#94a3b8;text-align:center;padding:12px">No version entries yet</td></tr></tbody>
+      </table>
+      <div class="m-row" style="margin-top:8px">
+        <input class="m-inp" id="ver-add-num" style="width:80px;flex:none" placeholder="Ver"/>
+        <input class="m-inp" id="ver-add-notes" placeholder="Describe what changed…"/>
+        <button class="mbtn" onclick="addVersion()">+ Add</button>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="mbtn" onclick="closeNarrative()">Cancel</button>
+      <button class="mbtn primary" onclick="closeNarrative()">Save &amp; Close</button>
+    </div>
   </div>
 </div>
 
@@ -199,7 +292,7 @@ const NT = {
   gateway:       { label:'Payment Gateway',      emoji:'🔀', color:'#0369a1', cat:'Systems'  },
   load_balancer: { label:'Load Balancer',        emoji:'⚖️', color:'#0284c7', cat:'Systems'  },
   api_server:    { label:'API Server',           emoji:'🔌', color:'#0284c7', cat:'Systems'  },
-  firewall:      { label:'Firewall',             emoji:'🔥', color:'#d97706', cat:'Security' },
+  firewall:      { label:'NSC',                  emoji:'🛡', color:'#d97706', cat:'Security' },
   waf:           { label:'WAF',                  emoji:'🛡', color:'#d97706', cat:'Security' },
   ids:           { label:'IDS/IPS',              emoji:'🔍', color:'#b45309', cat:'Security' },
   hsm:           { label:'HSM',                  emoji:'🔑', color:'#92400e', cat:'Security' },
@@ -219,7 +312,9 @@ const ET = {
   encrypted:  { label:'🔒 Encrypted PAN',   color:'#3b82f6', dash:''    },
   tokenized:  { label:'🔐 Tokenized',       color:'#10b981', dash:''    },
   auth:       { label:'🔄 Authorization',   color:'#8b5cf6', dash:''    },
+  capture:    { label:'💳 Capture',         color:'#059669', dash:''    },
   settlement: { label:'💰 Settlement',      color:'#f59e0b', dash:''    },
+  sad:        { label:'⛔ SAD',             color:'#b91c1c', dash:'8,4' },
   outofscope: { label:'⬜ Out of Scope',    color:'#9ca3af', dash:'4,4' },
   generic:    { label:'→ Generic Flow',     color:'#64748b', dash:''    },
 };
@@ -237,6 +332,7 @@ const S = {
   placing:null, connectMode:false, connectFrom:null,
   dragging:null, panning:null,
   pan:{x:0,y:0}, zoom:1, nid:1, eid:1, ctxTarget:null,
+  meta:{ narrative:'', version:'1.0', versions:[] },
 };
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
@@ -548,7 +644,7 @@ function showProps() {
     if (node.type==='pos' || node.type==='card_reader')
       h += `<div class="warn-badge">📋 POI device — PTS validation & tamper protection required (Req 9.9).</div>`;
     if (node.type==='firewall')
-      h += `<div class="ok-badge">✅ Segment & restrict traffic per Req 1. Document all rules.</div>`;
+      h += `<div class="ok-badge">✅ NSC (Network Security Control) — restrict traffic per Req 1. Document all rules, rule sets, and review every 6 months (Req 1.2.2).</div>`;
     if (node.type==='tokenization')
       h += `<div class="ok-badge">✅ Tokenization reduces PCI scope. Confirm vault placement.</div>`;
     if (node.type==='hsm')
@@ -565,12 +661,35 @@ function showProps() {
     </div><div class="props-sect"><label>Label</label>
       <input value="${esc(edge.label||'')}" onchange="updEdge('label',this.value)" placeholder="e.g. PAN + CVV"/>
     </div>`;
+    if (edge.type==='encrypted') {
+      const csOpts = ['TLS 1.3','TLS 1.2 + AES-256-GCM','TLS 1.2 + AES-128-GCM','TLS 1.2 + CHACHA20-POLY1305','ECDHE-RSA-AES256-GCM-SHA384','Custom']
+        .map(o => `<option${(edge.cipherSuite||'')=== o?' selected':''}>${o}</option>`).join('');
+      h += `<div class="props-sect"><label>Cipher Suite</label>
+        <select onchange="updEdge('cipherSuite',this.value)"><option value="">— select —</option>${csOpts}</select>
+      </div>`;
+      if (edge.cipherSuite==='Custom') {
+        h += `<div class="props-sect"><label>Custom Cipher Suite</label>
+          <input value="${esc(edge.cipherSuiteCustom||'')}" onchange="updEdge('cipherSuiteCustom',this.value)" placeholder="e.g. DHE-RSA-AES128-SHA256"/>
+        </div>`;
+      }
+      h += `<div class="ok-badge">✅ Use TLS 1.2+ with strong cipher suites (Req 4.2.1). Disable SSL, TLS 1.0, TLS 1.1, and weak ciphers.</div>`;
+    }
+    if (edge.type==='sad') {
+      const sadOpts = ['Track 1 / Track 2 Equivalent','CVV / CVV2 / CID / CAV2','PIN / PIN Block','Service Code','Full Magnetic Stripe Data','Multiple SAD Elements']
+        .map(o => `<option${(edge.sadSubtype||'')=== o?' selected':''}>${o}</option>`).join('');
+      h += `<div class="props-sect"><label>SAD Sub-type</label>
+        <select onchange="updEdge('sadSubtype',this.value)"><option value="">— select —</option>${sadOpts}</select>
+      </div>`;
+      h += `<div class="warn-badge">🚨 SAD must NEVER be stored after authorisation is complete (Req 3.3.1). SAD in transit must be encrypted and access strictly limited. Confirm this flow is pre-authorisation only.</div>`;
+    }
     if (edge.type==='pan')
       h += `<div class="warn-badge">🚨 Unencrypted PAN violates Req 4.2.1! Use TLS encryption or tokenize before transit.</div>`;
-    if (edge.type==='encrypted')
-      h += `<div class="ok-badge">✅ Use TLS 1.2+ with strong cipher suites (Req 4.2.1).</div>`;
     if (edge.type==='tokenized')
       h += `<div class="ok-badge">✅ Tokenized data is out of PCI scope if vault is properly segmented.</div>`;
+    if (edge.type==='capture')
+      h += `<div class="ok-badge">✅ Capture flow: funds are moved post-authorisation. Ensure this flow is encrypted (Req 4.2.1) and integrity-checked. Log all capture events (Req 10).</div>`;
+    if (edge.type==='settlement')
+      h += `<div class="ok-badge">✅ Settlement flow: confirm batch totals are reconciled and transmission is encrypted (Req 4.2.1).</div>`;
     content.innerHTML = h;
   }
 }
@@ -582,6 +701,54 @@ function updNode(k, v) {
 function updEdge(k, v) {
   const e = S.edges.find(e => e.id===S.selected?.id);
   if (e) { e[k] = v; renderEdges(); showProps(); }
+}
+
+// ─── NARRATIVE / VERSION CONTROL ─────────────────────────────────────────────
+function openNarrative() {
+  const m = $('narrative-modal'); m.classList.remove('hide');
+  $('nar-ta').value   = S.meta.narrative || '';
+  $('nar-ver').value  = S.meta.version   || '1.0';
+  renderVerTable();
+}
+
+function closeNarrative() {
+  S.meta.narrative = $('nar-ta').value;
+  S.meta.version   = $('nar-ver').value;
+  $('narrative-modal').classList.add('hide');
+}
+
+function renderVerTable() {
+  const tbody = $('ver-tbody');
+  if (!S.meta.versions.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color:#94a3b8;text-align:center;padding:12px">No version entries yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = S.meta.versions.map((v, i) =>
+    `<tr>
+      <td><span class="ver-badge">${esc(v.ver)}</span></td>
+      <td>${esc(v.date)}</td>
+      <td>${esc(v.notes)}</td>
+      <td><button class="ver-del" onclick="removeVersion(${i})" title="Remove">✕</button></td>
+    </tr>`
+  ).join('');
+}
+
+function addVersion() {
+  const ver   = $('ver-add-num').value.trim();
+  const notes = $('ver-add-notes').value.trim();
+  if (!ver) { toast('Enter a version number first'); return; }
+  const date  = new Date().toISOString().slice(0,10);
+  S.meta.versions.unshift({ ver, date, notes });
+  S.meta.version = ver;
+  $('nar-ver').value = ver;
+  $('ver-add-num').value = ''; $('ver-add-notes').value = '';
+  renderVerTable();
+  toast(`Version ${ver} added ✓`);
+}
+
+function removeVersion(idx) {
+  S.meta.versions.splice(idx, 1);
+  renderVerTable();
 }
 
 // ─── SELECTION ────────────────────────────────────────────────────────────────
@@ -820,7 +987,7 @@ function zoomOut() { S.zoom = Math.max(0.15, S.zoom/1.2); updateVP(); }
 
 // ─── SAVE / LOAD ──────────────────────────────────────────────────────────────
 function saveDiagram() {
-  const data = JSON.stringify({nodes:S.nodes, edges:S.edges, pan:S.pan, zoom:S.zoom}, null, 2);
+  const data = JSON.stringify({nodes:S.nodes, edges:S.edges, pan:S.pan, zoom:S.zoom, meta:S.meta}, null, 2);
   const a = Object.assign(document.createElement('a'), {
     href: URL.createObjectURL(new Blob([data], {type:'application/json'})),
     download: 'chd-diagram.json'
@@ -841,6 +1008,7 @@ function onFileLoad(e) {
       S.edges = data.edges || [];
       S.pan   = data.pan  || {x:0, y:0};
       S.zoom  = data.zoom || 1;
+      S.meta  = data.meta || { narrative:'', version:'1.0', versions:[] };
       S.nid   = Math.max(...S.nodes.map(n => parseInt(n.id.slice(1))||0), 0) + 1;
       S.eid   = Math.max(...S.edges.map(e => parseInt(e.id.slice(1))||0), 0) + 1;
       S.selected = null;
@@ -930,7 +1098,7 @@ function init() {
   // Load sample e-commerce CHD flow
   setTimeout(() => {
     const b = {id:mkId('n'), type:'browser',      x:0,   y:80,  label:'Customer Browser', notes:''};
-    const f = {id:mkId('n'), type:'firewall',     x:175, y:-20, label:'Perimeter Firewall', notes:''};
+    const f = {id:mkId('n'), type:'firewall',     x:175, y:-20, label:'Perimeter NSC', notes:''};
     const w = {id:mkId('n'), type:'web_server',   x:175, y:80,  label:'E-Commerce Server', notes:''};
     const g = {id:mkId('n'), type:'gateway',      x:360, y:80,  label:'Payment Gateway', notes:''};
     const t = {id:mkId('n'), type:'tokenization', x:360, y:-20, label:'Tokenization Vault', notes:''};
