@@ -1,0 +1,27 @@
+{
+  "nodes": [
+    {"id":"n1","type":"cardholder",  "x":0,   "y":120, "label":"Cardholder",          "notes":"Physical card presentation. Tap, chip, or swipe at POS."},
+    {"id":"n2","type":"pos",         "x":190, "y":120, "label":"POS Terminal",         "notes":"Req 9.9: Protect POI devices from tampering. PTS-validated hardware required."},
+    {"id":"n3","type":"firewall",    "x":380, "y":0,   "label":"Store Firewall",       "notes":"Req 1: Segment store network. POS VLAN must be isolated from general store LAN."},
+    {"id":"n4","type":"ids",         "x":380, "y":240, "label":"IDS / IPS",            "notes":"Req 10.7 / 11.5: Detect intrusions and file-change events in real time."},
+    {"id":"n5","type":"payment_app", "x":570, "y":120, "label":"Payment Application",  "notes":"Req 6: PA-DSS validated or assessed payment software. No PAN in logs."},
+    {"id":"n6","type":"hsm",         "x":760, "y":0,   "label":"HSM",                  "notes":"Req 3.7: Manages PIN encryption keys and PAN encryption keys. FIPS 140-2 L3."},
+    {"id":"n7","type":"gateway",     "x":760, "y":120, "label":"Payment Gateway",      "notes":"Routes auth and settlement to card networks and acquiring bank."},
+    {"id":"n8","type":"log_server",  "x":760, "y":240, "label":"Log Server",           "notes":"Req 10: Centralised, tamper-evident audit logs. Retain 12 months (3 months online)."},
+    {"id":"n9","type":"card_network","x":950, "y":0,   "label":"Card Network",         "notes":"External — Visa / MC / Amex network. Out of merchant CDE scope."},
+    {"id":"n10","type":"acq_bank",   "x":950, "y":120, "label":"Acquiring Bank",       "notes":"External — processes settlement. Out of merchant CDE scope."}
+  ],
+  "edges": [
+    {"id":"e1","sourceId":"n1","targetId":"n2","srcPort":"e","tgtPort":"w","type":"pan",        "label":"Swipe / Chip / Tap"},
+    {"id":"e2","sourceId":"n2","targetId":"n3","srcPort":"e","tgtPort":"w","type":"encrypted",  "label":"TLS 1.2+"},
+    {"id":"e3","sourceId":"n3","targetId":"n4","srcPort":"s","tgtPort":"n","type":"generic",    "label":""},
+    {"id":"e4","sourceId":"n3","targetId":"n5","srcPort":"e","tgtPort":"w","type":"encrypted",  "label":"Filtered PAN"},
+    {"id":"e5","sourceId":"n5","targetId":"n6","srcPort":"n","tgtPort":"s","type":"encrypted",  "label":"Key Ops"},
+    {"id":"e6","sourceId":"n5","targetId":"n7","srcPort":"e","tgtPort":"w","type":"auth",       "label":"Auth Request"},
+    {"id":"e7","sourceId":"n5","targetId":"n8","srcPort":"s","tgtPort":"n","type":"generic",    "label":"Audit Events"},
+    {"id":"e8","sourceId":"n7","targetId":"n9","srcPort":"n","tgtPort":"w","type":"auth",       "label":"Authorization"},
+    {"id":"e9","sourceId":"n7","targetId":"n10","srcPort":"e","tgtPort":"w","type":"settlement","label":"Batch Settlement"}
+  ],
+  "pan":{"x":60,"y":80},
+  "zoom":0.85
+}
