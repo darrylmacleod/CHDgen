@@ -3,24 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CHDgen - PCI Data Flow Builder</title>
+<title>CHDgen</title>
 <style>
 :root { color-scheme: light; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; color: #1e293b; height: 100vh; display: flex; flex-direction: column; overflow: hidden; user-select: none; }
 
-/* ── Toolbar ─────────────────────────────────────────────────────── */
 #toolbar {
   background: #1e293b; padding: 7px 12px; display: flex; align-items: center;
   gap: 6px; flex-shrink: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
 .logo { font-size: 13px; font-weight: 700; color: #f8fafc; margin-right: 6px; white-space: nowrap; }
 .logo span { color: #ef4444; }
-#dirty-dot {
-  width: 7px; height: 7px; border-radius: 50%; background: #f59e0b;
-  flex-shrink: 0; display: none; margin-right: 2px;
-  box-shadow: 0 0 4px #f59e0b;
-}
 .tbtn {
   background: #334155; color: #e2e8f0; border: 1px solid #475569; border-radius: 5px;
   padding: 4px 9px; font-size: 11px; cursor: pointer; display: flex; align-items: center;
@@ -29,16 +23,12 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
 .tbtn:hover { background: #475569; }
 .tbtn.active { background: #1d4ed8; border-color: #60a5fa; color: #fff; }
 .tbtn.danger:hover { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
-.tbtn:disabled { opacity: 0.38; cursor: not-allowed; }
-.tbtn:disabled:hover { background: #334155; }
 .tsep { width: 1px; height: 18px; background: #475569; flex-shrink: 0; }
 .zoom-lbl { font-size: 11px; color: #94a3b8; min-width: 34px; text-align: center; }
 .spacer { flex: 1; }
 
-/* ── Layout ──────────────────────────────────────────────────────── */
 #main { display: flex; flex: 1; overflow: hidden; }
 
-/* ── Sidebar ─────────────────────────────────────────────────────── */
 #sidebar {
   width: 190px; background: #fff; border-right: 1px solid #e2e8f0;
   overflow-y: auto; flex-shrink: 0;
@@ -57,19 +47,16 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
 .sitem-ic { width: 22px; height: 22px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
 .sitem-lbl { font-size: 11px; color: #475569; }
 
-/* ── Canvas ──────────────────────────────────────────────────────── */
 #canvas-wrap {
   flex: 1; position: relative; overflow: hidden; background: #f1f5f9;
   background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
   background-size: 22px 22px; cursor: default;
 }
 #canvas-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-#canvas-svg.placing  { cursor: crosshair; }
-#canvas-svg.zonedraw { cursor: crosshair; }
+#canvas-svg.placing { cursor: crosshair; }
 
-/* ── Properties panel ────────────────────────────────────────────── */
 #props {
-  width: 210px; background: #fff; border-left: 1px solid #e2e8f0;
+  width: 200px; background: #fff; border-left: 1px solid #e2e8f0;
   flex-shrink: 0; overflow-y: auto; display: none;
 }
 #props.show { display: block; }
@@ -85,7 +72,6 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
 .warn-badge { margin: 8px; padding: 7px 9px; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; font-size: 10px; color: #991b1b; line-height: 1.5; }
 .ok-badge   { margin: 8px; padding: 7px 9px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; font-size: 10px; color: #166534; line-height: 1.5; }
 
-/* ── Legend ──────────────────────────────────────────────────────── */
 #legend {
   position: absolute; bottom: 10px; right: 10px;
   background: rgba(255,255,255,0.97); border: 1px solid #e2e8f0; border-radius: 8px;
@@ -96,7 +82,6 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
 .leg-line { height: 2px; width: 20px; border-radius: 1px; flex-shrink: 0; }
 .leg-dash { width: 20px; height: 0; border-top: 2px dashed; flex-shrink: 0; }
 
-/* ── Hint bar ────────────────────────────────────────────────────── */
 #hint-bar {
   position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
   background: rgba(30,41,59,0.88); color: #e2e8f0; border-radius: 20px;
@@ -105,10 +90,9 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
 }
 #hint-bar.hide { opacity: 0; }
 
-/* ── Context menu ────────────────────────────────────────────────── */
 #ctx-menu {
   position: fixed; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
-  padding: 4px; z-index: 1000; min-width: 160px;
+  padding: 4px; z-index: 1000; min-width: 150px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.12); display: none;
 }
 .cx-item { padding: 6px 10px; font-size: 11px; cursor: pointer; border-radius: 4px; color: #374151; display: flex; align-items: center; gap: 7px; }
@@ -117,86 +101,13 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
 .cx-item.danger:hover { background: #fef2f2; }
 .cx-sep { height: 1px; background: #f1f5f9; margin: 3px 0; }
 
-/* ── Toast ───────────────────────────────────────────────────────── */
 #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #f1f5f9; border-radius: 8px; padding: 7px 16px; font-size: 11px; z-index: 2000; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
 #toast.show { opacity: 1; }
 
-/* ── Node & Edge styles ──────────────────────────────────────────── */
 .node { cursor: move; }
 .node .port { opacity: 0; cursor: crosshair; transition: opacity 0.12s; }
 .node:hover .port { opacity: 1; }
 .edge-line { fill: none; pointer-events: none; }
-
-/* ── Zone styles ─────────────────────────────────────────────────── */
-.zone-hdr-rect { cursor: move; }
-.zone-lbl-text { pointer-events: none; font-family: 'Segoe UI', system-ui, sans-serif; }
-.zone-bg-rect  { pointer-events: none; }
-.zone-ring-rect { pointer-events: none; }
-
-/* ── Inline label editor ─────────────────────────────────────────── */
-#label-editor-wrap {
-  position: fixed; z-index: 3000; display: none;
-}
-#label-editor-input {
-  border: 2px solid #3b82f6; border-radius: 5px; padding: 4px 8px;
-  font-size: 13px; font-family: 'Segoe UI', system-ui, sans-serif;
-  color: #1e293b; background: #fff; outline: none;
-  min-width: 120px; max-width: 260px;
-  box-shadow: 0 4px 16px rgba(59,130,246,0.25);
-}
-
-/* ── Narrative Modal ─────────────────────────────────────────────── */
-#narrative-modal {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 5000;
-  display: flex; align-items: center; justify-content: center;
-}
-#narrative-modal.hide { display: none; }
-.modal-box {
-  background: #fff; border-radius: 10px; width: 580px; max-width: 95vw;
-  max-height: 88vh; display: flex; flex-direction: column;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.22);
-}
-.modal-hdr {
-  padding: 13px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px;
-  font-weight: 700; color: #1e293b; display: flex; align-items: center;
-  justify-content: space-between; flex-shrink: 0;
-}
-.modal-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
-.modal-ftr {
-  padding: 10px 16px; border-top: 1px solid #e2e8f0;
-  display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0;
-}
-.mbtn {
-  padding: 6px 14px; border-radius: 5px; font-size: 12px; cursor: pointer;
-  border: 1px solid #e2e8f0; background: #f8fafc; color: #374151;
-  font-family: inherit;
-}
-.mbtn.primary { background: #1e293b; color: #fff; border-color: #1e293b; }
-.mbtn:hover { filter: brightness(0.93); }
-.m-label {
-  font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;
-  letter-spacing: 0.05em; margin-bottom: 5px; margin-top: 14px;
-}
-.m-label:first-child { margin-top: 0; }
-.m-ta {
-  width: 100%; border: 1px solid #e2e8f0; border-radius: 5px;
-  padding: 7px 9px; font-size: 12px; color: #1e293b; font-family: inherit;
-  resize: vertical; min-height: 80px; background: #f8fafc; line-height: 1.5;
-}
-.m-ta:focus, .m-inp:focus { outline: none; border-color: #3b82f6; background: #fff; }
-.m-inp {
-  border: 1px solid #e2e8f0; border-radius: 5px; padding: 5px 9px;
-  font-size: 12px; color: #1e293b; background: #f8fafc; font-family: inherit;
-}
-.m-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
-.m-row .m-inp { flex: 1; }
-.ver-table { width: 100%; border-collapse: collapse; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
-.ver-table th { background: #f8fafc; padding: 6px 9px; text-align: left; font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 700; border-bottom: 1px solid #e2e8f0; }
-.ver-table td { padding: 6px 9px; border-bottom: 1px solid #f1f5f9; color: #374151; vertical-align: top; }
-.ver-table tr:last-child td { border-bottom: none; }
-.ver-badge { display: inline-block; padding: 1px 8px; border-radius: 20px; background: #eff6ff; color: #1d4ed8; font-size: 10px; font-weight: 700; }
-.ver-del { background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 13px; padding: 0 4px; }
-.ver-del:hover { color: #dc2626; }
 
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -204,19 +115,13 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
 </head>
 <body>
 
-<!-- ── Toolbar ────────────────────────────────────────────────────── -->
 <div id="toolbar">
   <div class="logo"><span>CHDgen</span> PCI Data Flow Builder</div>
-  <div id="dirty-dot" title="Unsaved changes"></div>
-  <div class="tsep"></div>
-  <button class="tbtn" id="btnUndo" onclick="undo()" title="Undo (Ctrl+Z)" disabled>↩ Undo</button>
-  <button class="tbtn" id="btnRedo" onclick="redo()" title="Redo (Ctrl+Y)" disabled>↪ Redo</button>
   <div class="tsep"></div>
   <button class="tbtn" onclick="newDiagram()" title="Clear canvas">⬜ New</button>
   <button class="tbtn" onclick="fitView()" title="Fit all nodes in view">⊡ Fit</button>
   <div class="tsep"></div>
   <button class="tbtn" id="btnConnect" onclick="toggleConnectMode()" title="Click-to-connect mode">🔗 Connect</button>
-  <button class="tbtn active" id="btnSnap" onclick="toggleSnap()" title="Toggle grid snap">⊞ Snap</button>
   <div class="tsep"></div>
   <button class="tbtn" onclick="saveDiagram()" title="Save diagram to JSON file">💾 Save</button>
   <button class="tbtn" onclick="loadDiagram()" title="Load diagram from JSON file">📂 Load</button>
@@ -226,8 +131,6 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
   <button class="tbtn" onclick="exportPNG()">↓ PNG</button>
   <button class="tbtn" onclick="exportPDF()">↓ PDF</button>
   <div class="tsep"></div>
-  <button class="tbtn" onclick="openNarrative()" title="Diagram narrative &amp; version control">📝 Narrative</button>
-  <div class="tsep"></div>
   <button class="tbtn" onclick="zoomOut()">－</button>
   <span class="zoom-lbl" id="zoomLbl">100%</span>
   <button class="tbtn" onclick="zoomIn()">＋</button>
@@ -235,26 +138,16 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
   <button class="tbtn danger" onclick="deleteSelected()" title="Delete selected (Del)">✕ Delete</button>
 </div>
 
-<!-- ── Main ──────────────────────────────────────────────────────── -->
 <div id="main">
   <div id="sidebar"></div>
 
   <div id="canvas-wrap">
-    <svg id="canvas-svg" xmlns="http://www.w3.org/2000/svg" aria-label="PCI data flow diagram canvas" role="img">
+    <svg id="canvas-svg" xmlns="http://www.w3.org/2000/svg">
       <defs id="svg-defs"></defs>
       <rect id="canvas-bg" fill="transparent" width="100%" height="100%"/>
       <g id="viewport">
-        <g id="zones-layer"></g>
         <g id="edges-layer"></g>
         <g id="nodes-layer"></g>
-        <!-- Box-select marquee -->
-        <rect id="box-select-rect" fill="rgba(59,130,246,0.08)" stroke="#3b82f6"
-              stroke-width="1.5" stroke-dasharray="4,3" style="display:none; pointer-events:none;"/>
-        <!-- Zone draw preview -->
-        <rect id="zone-preview-rect" fill="rgba(59,130,246,0.05)" stroke="#3b82f6"
-              stroke-width="2" stroke-dasharray="8,4" rx="6"
-              style="display:none; pointer-events:none;"/>
-        <!-- Rubber-band for port drag -->
         <line id="rubber-band" stroke="#3b82f6" stroke-width="2" stroke-dasharray="5,4"
               style="display:none; pointer-events:none;"/>
       </g>
@@ -266,9 +159,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
       <div class="leg-row"><div class="leg-line" style="background:#3b82f6"></div> 🔒 Encrypted PAN</div>
       <div class="leg-row"><div class="leg-line" style="background:#10b981"></div> 🔐 Tokenized</div>
       <div class="leg-row"><div class="leg-line" style="background:#8b5cf6"></div> 🔄 Authorization</div>
-      <div class="leg-row"><div class="leg-line" style="background:#059669"></div> 💳 Capture</div>
       <div class="leg-row"><div class="leg-line" style="background:#f59e0b"></div> 💰 Settlement</div>
-      <div class="leg-row"><div class="leg-dash" style="color:#b91c1c"></div> ⛔ SAD</div>
       <div class="leg-row"><div class="leg-dash" style="color:#9ca3af"></div> Out of Scope</div>
       <div class="leg-row"><div class="leg-line" style="background:#64748b"></div> Generic Flow</div>
     </div>
@@ -280,66 +171,19 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
   </div>
 </div>
 
-<!-- ── Inline label editor ────────────────────────────────────────── -->
-<div id="label-editor-wrap">
-  <input id="label-editor-input" type="text"
-         onkeydown="onLabelKey(event)" onblur="commitLabel()"/>
-</div>
-
-<!-- ── Narrative & Version Control Modal ─────────────────────────── -->
-<div id="narrative-modal" class="hide">
-  <div class="modal-box">
-    <div class="modal-hdr">
-      <span>📝 Diagram Narrative &amp; Version Control</span>
-      <button class="mbtn" onclick="closeNarrative()" style="padding:2px 9px;font-size:14px">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="m-label">Diagram Narrative</div>
-      <textarea class="m-ta" id="nar-ta" rows="5"
-        placeholder="Describe the cardholder data environment — scope, key data flows, security controls in place, third-party dependencies, and any assumptions or exclusions…"></textarea>
-
-      <div class="m-label" style="margin-top:16px">Current Version</div>
-      <div class="m-row">
-        <input class="m-inp" id="nar-ver" style="width:90px;flex:none" placeholder="e.g. 1.0"/>
-        <span style="font-size:11px;color:#94a3b8">Update this field or use Add Version below</span>
-      </div>
-
-      <div class="m-label" style="margin-top:16px">Version History</div>
-      <table class="ver-table">
-        <thead><tr><th>Version</th><th>Date</th><th>Notes</th><th></th></tr></thead>
-        <tbody id="ver-tbody"><tr><td colspan="4" style="color:#94a3b8;text-align:center;padding:12px">No version entries yet</td></tr></tbody>
-      </table>
-      <div class="m-row" style="margin-top:8px">
-        <input class="m-inp" id="ver-add-num"   style="width:80px;flex:none" placeholder="Ver"/>
-        <input class="m-inp" id="ver-add-notes" placeholder="Describe what changed…"/>
-        <button class="mbtn" onclick="addVersion()">+ Add</button>
-      </div>
-    </div>
-    <div class="modal-ftr">
-      <button class="mbtn" onclick="closeNarrative()">Cancel</button>
-      <button class="mbtn primary" onclick="closeNarrative()">Save &amp; Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── Context Menu ───────────────────────────────────────────────── -->
 <div id="ctx-menu">
-  <div class="cx-item" id="ctx-edit"      onclick="ctxEdit()">✏️ Edit Label</div>
-  <div class="cx-item" id="ctx-duplicate" onclick="ctxDuplicate()">⧉ Duplicate</div>
+  <div class="cx-item" onclick="ctxEdit()">✏️ Edit Label</div>
   <div class="cx-sep"></div>
   <div class="cx-item danger" onclick="ctxDelete()">🗑 Delete</div>
 </div>
 <div id="toast"></div>
 
 <script>
-'use strict';
-
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
-const NW = 145, NH = 68, GRID = 22, MAX_HIST = 50;
+const NW = 145, NH = 68;
 const NS = 'http://www.w3.org/2000/svg';
 const CATS = ['Actors','Devices','Systems','Security','Storage','External'];
 
-// Node type registry
 const NT = {
   cardholder:    { label:'Cardholder',          emoji:'👤', color:'#10b981', cat:'Actors'   },
   merchant:      { label:'Merchant',             emoji:'🏪', color:'#0891b2', cat:'Actors'   },
@@ -355,13 +199,12 @@ const NT = {
   gateway:       { label:'Payment Gateway',      emoji:'🔀', color:'#0369a1', cat:'Systems'  },
   load_balancer: { label:'Load Balancer',        emoji:'⚖️', color:'#0284c7', cat:'Systems'  },
   api_server:    { label:'API Server',           emoji:'🔌', color:'#0284c7', cat:'Systems'  },
-  firewall:      { label:'NSC',                  emoji:'🛡', color:'#d97706', cat:'Security' },
+  firewall:      { label:'Firewall',             emoji:'🔥', color:'#d97706', cat:'Security' },
   waf:           { label:'WAF',                  emoji:'🛡', color:'#d97706', cat:'Security' },
   ids:           { label:'IDS/IPS',              emoji:'🔍', color:'#b45309', cat:'Security' },
   hsm:           { label:'HSM',                  emoji:'🔑', color:'#92400e', cat:'Security' },
   tokenization:  { label:'Tokenization Vault',   emoji:'🔐', color:'#78350f', cat:'Security' },
   p2pe:          { label:'P2PE Device',          emoji:'🔒', color:'#92400e', cat:'Security' },
-  enc_proxy:     { label:'Encryption Proxy',     emoji:'🔏', color:'#7c2d12', cat:'Security' },
   chd_db:        { label:'CHD Database',         emoji:'🗄', color:'#dc2626', cat:'Storage'  },
   log_server:    { label:'Log Server',           emoji:'📋', color:'#64748b', cat:'Storage'  },
   backup:        { label:'Backup System',        emoji:'💾', color:'#64748b', cat:'Storage'  },
@@ -369,31 +212,18 @@ const NT = {
   acq_bank:      { label:'Acquiring Bank',       emoji:'🏦', color:'#1d4ed8', cat:'External' },
   iss_bank:      { label:'Issuing Bank',         emoji:'🏛', color:'#1d4ed8', cat:'External' },
   psp:           { label:'PSP / Processor',      emoji:'💱', color:'#1e40af', cat:'External' },
-  cloud_provider:{ label:'Cloud Provider',       emoji:'☁️', color:'#7c3aed', cat:'External' },
-  tpsp:          { label:'TPSP / 3rd Party',     emoji:'🤝', color:'#1e40af', cat:'External' },
 };
 
-// Edge type registry
 const ET = {
   pan:        { label:'⚠️ Unencrypted PAN', color:'#ef4444', dash:'7,5' },
   encrypted:  { label:'🔒 Encrypted PAN',   color:'#3b82f6', dash:''    },
   tokenized:  { label:'🔐 Tokenized',       color:'#10b981', dash:''    },
   auth:       { label:'🔄 Authorization',   color:'#8b5cf6', dash:''    },
-  capture:    { label:'💳 Capture',         color:'#059669', dash:''    },
   settlement: { label:'💰 Settlement',      color:'#f59e0b', dash:''    },
-  sad:        { label:'⛔ SAD',             color:'#b91c1c', dash:'8,4' },
   outofscope: { label:'⬜ Out of Scope',    color:'#9ca3af', dash:'4,4' },
   generic:    { label:'→ Generic Flow',     color:'#64748b', dash:''    },
 };
 
-// Zone type registry
-const ZT = {
-  cde:        { label:'CDE',              color:'#ef4444', bg:'rgba(239,68,68,0.06)',   border:'rgba(239,68,68,0.45)'   },
-  connected:  { label:'Connected to CDE', color:'#f59e0b', bg:'rgba(245,158,11,0.07)', border:'rgba(245,158,11,0.5)'   },
-  outofscope: { label:'Out of Scope',     color:'#94a3b8', bg:'rgba(148,163,184,0.07)',border:'rgba(148,163,184,0.5)'  },
-};
-
-// Port definitions (position factors + offset + control offset)
 const PD = {
   n: { px:0.5, py:0,   ox:0,  oy:-1, bx:0,  by:-6 },
   s: { px:0.5, py:1,   ox:0,  oy:1,  bx:0,  by:6  },
@@ -403,32 +233,18 @@ const PD = {
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 const S = {
-  nodes:[], edges:[], zones:[],
-  selected:null,               // { type:'node'|'edge'|'zone', id }
-  multiSelected: new Set(),    // Set of node IDs for multi-select
-  placing:null,                // node type being placed
-  placingZone:null,            // zone type being drawn
-  connectMode:false, connectFrom:null,
+  nodes:[], edges:[], selected:null,
+  placing:null, connectMode:false, connectFrom:null,
   dragging:null, panning:null,
-  boxSelect:null,              // rubber-band multi-select state
-  zoneDraw:null,               // in-progress zone draw state
-  clipboard:null,              // copied nodes
-  pan:{x:0,y:0}, zoom:1,
-  nid:1, eid:1, zid:1,
-  ctxTarget:null,
-  meta:{ narrative:'', version:'1.0', versions:[] },
-  history:[], future:[],
-  dirty:false, snapGrid:true,
+  pan:{x:0,y:0}, zoom:1, nid:1, eid:1, ctxTarget:null,
 };
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
-function snap(v) { return S.snapGrid ? Math.round(v / GRID) * GRID : v; }
-
 function svgCoord(sx, sy) {
   const r = $('canvas-svg').getBoundingClientRect();
-  return { x:(sx - r.left - S.pan.x) / S.zoom, y:(sy - r.top - S.pan.y) / S.zoom };
+  return { x:(sx-r.left-S.pan.x)/S.zoom, y:(sy-r.top-S.pan.y)/S.zoom };
 }
 
 function portPos(node, p) {
@@ -436,22 +252,32 @@ function portPos(node, p) {
   return { x:node.x + d.px*NW + d.bx, y:node.y + d.py*NH + d.by };
 }
 
+function portCtrl(node, p, C) {
+  const d = PD[p], pp = portPos(node, p);
+  return { x:pp.x + d.ox*C, y:pp.y + d.oy*C };
+}
+
 function edgePath(e) {
   const src = S.nodes.find(n => n.id===e.sourceId);
   const tgt = S.nodes.find(n => n.id===e.targetId);
   if (!src || !tgt) return '';
   const p1 = portPos(src, e.srcPort), p2 = portPos(tgt, e.tgtPort);
-  const hSrc = e.srcPort==='e' || e.srcPort==='w';
-  const hTgt = e.tgtPort==='e' || e.tgtPort==='w';
+  const sp = e.srcPort, tp = e.tgtPort;
+  const hSrc = sp==='e' || sp==='w';
+  const hTgt = tp==='e' || tp==='w';
   if (hSrc && hTgt) {
+    // Both horizontal ports: Z-shape through vertical midpoint
     const mx = (p1.x + p2.x) / 2;
     return `M${p1.x},${p1.y} L${mx},${p1.y} L${mx},${p2.y} L${p2.x},${p2.y}`;
   } else if (!hSrc && !hTgt) {
+    // Both vertical ports: Z-shape through horizontal midpoint
     const my = (p1.y + p2.y) / 2;
     return `M${p1.x},${p1.y} L${p1.x},${my} L${p2.x},${my} L${p2.x},${p2.y}`;
-  } else if (hSrc) {
+  } else if (hSrc && !hTgt) {
+    // Source horizontal, target vertical: single L-bend
     return `M${p1.x},${p1.y} L${p2.x},${p1.y} L${p2.x},${p2.y}`;
   } else {
+    // Source vertical, target horizontal: single L-bend
     return `M${p1.x},${p1.y} L${p1.x},${p2.y} L${p2.x},${p2.y}`;
   }
 }
@@ -459,23 +285,23 @@ function edgePath(e) {
 function orthMid(p1, p2, sp, tp) {
   const hSrc = sp==='e' || sp==='w';
   const hTgt = tp==='e' || tp==='w';
-  if (hSrc && hTgt)  { return { x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2 }; }
-  if (!hSrc && !hTgt){ return { x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2 }; }
-  if (hSrc && !hTgt) { return { x:p2.x, y:p1.y }; }
+  if (hSrc && hTgt) { return { x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2 }; }
+  if (!hSrc && !hTgt) { return { x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2 }; }
+  if (hSrc && !hTgt)  { return { x:p2.x, y:p1.y }; }
   return { x:p1.x, y:p2.y };
 }
 
 function bestPorts(a, b) {
   const dx = b.x+NW/2 - (a.x+NW/2), dy = b.y+NH/2 - (a.y+NH/2);
-  if (Math.abs(dx) >= Math.abs(dy)) return { sp:dx>0?'e':'w', tp:dx>0?'w':'e' };
-  return { sp:dy>0?'s':'n', tp:dy>0?'n':'s' };
+  if (Math.abs(dx) >= Math.abs(dy)) return { sp: dx>0?'e':'w', tp: dx>0?'w':'e' };
+  return { sp: dy>0?'s':'n', tp: dy>0?'n':'s' };
 }
 
 function closestPort(node, cx, cy) {
   let best = null, bestD = Infinity;
   for (const p of ['n','s','e','w']) {
     const pp = portPos(node, p);
-    const d  = Math.hypot(pp.x-cx, pp.y-cy);
+    const d = Math.hypot(pp.x-cx, pp.y-cy);
     if (d < bestD) { bestD = d; best = p; }
   }
   return best;
@@ -489,13 +315,12 @@ function nodeAt(cx, cy, excl) {
   return null;
 }
 
-function makeNodeId() { return 'n' + (S.nid++); }
-function makeEdgeId() { return 'e' + (S.eid++); }
-function makeZoneId() { return 'z' + (S.zid++); }
+function mkId(p) { return p==='n' ? 'n'+(S.nid++) : 'e'+(S.eid++); }
 
 function toast(msg, dur=2200) {
   const t = $('toast');
-  t.textContent = msg; t.classList.add('show');
+  t.textContent = msg;
+  t.classList.add('show');
   clearTimeout(t._t);
   t._t = setTimeout(() => t.classList.remove('show'), dur);
 }
@@ -506,53 +331,8 @@ function hint(msg) {
   else h.classList.add('hide');
 }
 
-// Minimal XSS-safe escaping for innerHTML contexts
 function esc(s) {
-  return String(s||'')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ─── HISTORY ──────────────────────────────────────────────────────────────────
-function stateSnapshot() {
-  return JSON.stringify({ nodes:S.nodes, edges:S.edges, zones:S.zones });
-}
-
-function pushHistory() {
-  S.history.push(stateSnapshot());
-  if (S.history.length > MAX_HIST) S.history.shift();
-  S.future = [];
-  setDirty(true);
-  updateHistoryButtons();
-}
-
-function undo() {
-  if (!S.history.length) return;
-  S.future.push(stateSnapshot());
-  const prev = JSON.parse(S.history.pop());
-  S.nodes = prev.nodes; S.edges = prev.edges; S.zones = prev.zones || [];
-  S.selected = null; S.multiSelected.clear();
-  renderAll(); showProps(); updateHistoryButtons(); setDirty(true);
-}
-
-function redo() {
-  if (!S.future.length) return;
-  S.history.push(stateSnapshot());
-  const next = JSON.parse(S.future.pop());
-  S.nodes = next.nodes; S.edges = next.edges; S.zones = next.zones || [];
-  S.selected = null; S.multiSelected.clear();
-  renderAll(); showProps(); updateHistoryButtons(); setDirty(true);
-}
-
-function updateHistoryButtons() {
-  $('btnUndo').disabled = S.history.length === 0;
-  $('btnRedo').disabled = S.future.length  === 0;
-}
-
-function setDirty(val) {
-  S.dirty = val;
-  $('dirty-dot').style.display = val ? '' : 'none';
-  document.title = (val ? '● ' : '') + 'CHDgen - PCI Data Flow Builder';
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ─── SVG DEFS ─────────────────────────────────────────────────────────────────
@@ -561,21 +341,20 @@ function initDefs() {
   let h = '<filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">' +
           '<feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.1)"/></filter>';
   for (const [k, et] of Object.entries(ET)) {
-    h += `<marker id="arr-${esc(k)}" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">` +
-         `<polygon points="0 0,10 3.5,0 7" fill="${esc(et.color)}"/></marker>`;
+    h += `<marker id="arr-${k}" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="8" refX="12" refY="4" orient="auto">` +
+         `<polygon points="0 0,12 4,0 8" fill="${et.color}"/></marker>`;
   }
   d.innerHTML = h;
 }
 
 // ─── RENDER ───────────────────────────────────────────────────────────────────
-function renderAll() { renderZones(); renderEdges(); renderNodes(); updateVP(); }
+function renderAll() { renderEdges(); renderNodes(); updateVP(); }
 
 function updateVP() {
   $('viewport').setAttribute('transform', `translate(${S.pan.x},${S.pan.y}) scale(${S.zoom})`);
   $('zoomLbl').textContent = Math.round(S.zoom*100) + '%';
 }
 
-// ── Node rendering ────────────────────────────────────────────────────────────
 function renderNodes() {
   const layer = $('nodes-layer');
   const ids = new Set(S.nodes.map(n => n.id));
@@ -587,18 +366,17 @@ function renderNodes() {
   }
 }
 
-function mkSvgEl(parent, tag, attrs={}) {
-  const el = document.createElementNS(NS, tag);
-  for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
-  parent.appendChild(el); return el;
-}
-
 function mkNodeEl(node) {
   const g = document.createElementNS(NS, 'g');
   g.setAttribute('class', 'node');
   g.dataset.id = node.id;
 
-  const mk = (tag, attrs) => mkSvgEl(g, tag, attrs);
+  function mk(tag, attrs={}) {
+    const el = document.createElementNS(NS, tag);
+    for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
+    g.appendChild(el); return el;
+  }
+
   mk('rect', { x:'-8', y:'-8', width:NW+16, height:NH+16, rx:'10',
                fill:'transparent', 'pointer-events':'all', class:'node-hit' });
   mk('rect', { x:'2', y:'3', width:NW, height:NH, rx:'8', fill:'rgba(0,0,0,0.07)' });
@@ -616,7 +394,7 @@ function mkNodeEl(node) {
 
   for (const [pk, pd] of Object.entries(PD)) {
     const p = mk('circle', {
-      cx:pd.px*NW+pd.bx, cy:pd.py*NH+pd.by, r:'6',
+      cx: pd.px*NW+pd.bx, cy: pd.py*NH+pd.by, r:'6',
       fill:'#fff', stroke:'#3b82f6', 'stroke-width':'2', class:'port'
     });
     p.dataset.port = pk;
@@ -644,16 +422,13 @@ function updNodeEl(g, node) {
   g.querySelector('.node-ico').textContent = nt.emoji;
   g.querySelector('.node-lbl').textContent = node.label || nt.label;
   g.querySelector('.node-sub').textContent = nt.label;
-  const isSingleSel = S.selected?.type==='node' && S.selected?.id===node.id;
-  const isMultiSel  = S.multiSelected.has(node.id);
-  const sel = isSingleSel || isMultiSel;
+  const sel = S.selected?.type==='node' && S.selected?.id===node.id;
   g.querySelector('.sel-ring').setAttribute('display', sel ? '' : 'none');
   const body = g.querySelector('.node-body');
   body.setAttribute('stroke', sel ? '#3b82f6' : '#e2e8f0');
   body.setAttribute('stroke-width', sel ? '2' : '1.5');
 }
 
-// ── Edge rendering ────────────────────────────────────────────────────────────
 function renderEdges() {
   const layer = $('edges-layer');
   const ids = new Set(S.edges.map(e => e.id));
@@ -669,11 +444,19 @@ function mkEdgeEl(edge) {
   const g = document.createElementNS(NS, 'g');
   g.setAttribute('class', 'edge');
   g.dataset.id = edge.id;
-  const mk = (tag, attrs) => mkSvgEl(g, tag, attrs);
-  mk('path', { stroke:'transparent', 'stroke-width':'14', fill:'none', cursor:'pointer', class:'edge-hit' });
+
+  function mk(tag, attrs={}) {
+    const el = document.createElementNS(NS, tag);
+    for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
+    g.appendChild(el); return el;
+  }
+
+  mk('path', { stroke:'transparent', 'stroke-width':'14', fill:'none',
+               cursor:'pointer', class:'edge-hit' });
   mk('path', { 'stroke-width':'2.5', class:'edge-line' });
   mk('rect', { rx:'3', fill:'#fff', stroke:'#e2e8f0', 'stroke-width':'1', class:'edge-lbg' });
   mk('text', { 'text-anchor':'middle', 'font-size':'10', fill:'#475569', class:'edge-ltxt' });
+
   g.addEventListener('mousedown', onEdgeDown);
   g.addEventListener('contextmenu', onEdgeCtx);
   return g;
@@ -681,7 +464,8 @@ function mkEdgeEl(edge) {
 
 function updEdgeEl(g, edge) {
   const et = ET[edge.type||'generic'];
-  const d  = edgePath(edge); if (!d) return;
+  const d = edgePath(edge); if (!d) return;
+
   const src = S.nodes.find(n => n.id===edge.sourceId);
   const tgt = S.nodes.find(n => n.id===edge.targetId);
   const p1  = portPos(src, edge.srcPort), p2 = portPos(tgt, edge.tgtPort);
@@ -697,159 +481,50 @@ function updEdgeEl(g, edge) {
   line.setAttribute('stroke-width', sel ? '3.5' : '2.5');
   line.setAttribute('opacity', sel ? '1' : '0.88');
 
-  const lbl  = edge.label||'';
-  const lbg  = g.querySelector('.edge-lbg');
-  const ltxt = g.querySelector('.edge-ltxt');
+  const lbl = edge.label||'';
+  const lbg = g.querySelector('.edge-lbg'), ltxt = g.querySelector('.edge-ltxt');
   if (lbl) {
-    ltxt.setAttribute('x', mid.x);
-    ltxt.setAttribute('y', mid.y+4);
-    ltxt.textContent = lbl;
-    // Use computed text length for accurate background sizing
-    const tw = ltxt.getComputedTextLength ? ltxt.getComputedTextLength() : lbl.length * 6.2;
-    const w  = tw + 12;
+    const w = lbl.length*6.2 + 12;
+    ltxt.setAttribute('x', mid.x); ltxt.setAttribute('y', mid.y+4); ltxt.textContent = lbl;
     lbg.setAttribute('x', mid.x-w/2); lbg.setAttribute('y', mid.y-9);
     lbg.setAttribute('width', w);     lbg.setAttribute('height', 14);
     lbg.setAttribute('display', '');  ltxt.setAttribute('display', '');
   } else {
-    lbg.setAttribute('display','none'); ltxt.setAttribute('display','none');
+    lbg.setAttribute('display', 'none'); ltxt.setAttribute('display', 'none');
   }
-}
-
-// ── Zone rendering ────────────────────────────────────────────────────────────
-function renderZones() {
-  const layer = $('zones-layer');
-  const ids = new Set(S.zones.map(z => z.id));
-  layer.querySelectorAll('.zone').forEach(el => { if (!ids.has(el.dataset.id)) el.remove(); });
-  for (const zone of S.zones) {
-    let g = layer.querySelector(`.zone[data-id="${zone.id}"]`);
-    if (!g) { g = mkZoneEl(zone); layer.appendChild(g); }
-    updZoneEl(g, zone);
-  }
-}
-
-function mkZoneEl(zone) {
-  const g = document.createElementNS(NS, 'g');
-  g.setAttribute('class', 'zone');
-  g.dataset.id = zone.id;
-  const mk = (tag, attrs) => mkSvgEl(g, tag, attrs);
-
-  // Background fill (non-interactive — let clicks pass to canvas/nodes below)
-  mk('rect', { rx:'8', class:'zone-bg-rect' });
-  // Dashed border (non-interactive)
-  mk('rect', { rx:'8', fill:'none', 'stroke-width':'2',
-               'stroke-dasharray':'10,5', class:'zone-border-rect', 'pointer-events':'none' });
-  // Header bar — the only interactive hit area for drag/select
-  mk('rect', { height:'26', rx:'6', class:'zone-hdr-rect', cursor:'move' });
-  // Label text
-  mk('text', { y:'17', x:'10', 'font-size':'11', 'font-weight':'700',
-               class:'zone-lbl-text' });
-  // Selection ring
-  mk('rect', { rx:'10', fill:'none', 'stroke-width':'2.5', 'stroke-dasharray':'6,3',
-               stroke:'#3b82f6', display:'none', class:'zone-ring-rect' });
-
-  g.addEventListener('mousedown', onZoneDown);
-  g.addEventListener('dblclick',  onZoneDbl);
-  g.addEventListener('contextmenu', onZoneCtx);
-  return g;
-}
-
-function updZoneEl(g, zone) {
-  const zt  = ZT[zone.type||'cde'];
-  const sel = S.selected?.type==='zone' && S.selected?.id===zone.id;
-
-  g.querySelector('.zone-bg-rect')
-    .setAttribute('fill', zt.bg);
-  g.querySelector('.zone-bg-rect')
-    .setAttribute('width', zone.w);
-  g.querySelector('.zone-bg-rect')
-    .setAttribute('height', zone.h);
-
-  const border = g.querySelector('.zone-border-rect');
-  border.setAttribute('width',  zone.w);
-  border.setAttribute('height', zone.h);
-  border.setAttribute('stroke', zt.border);
-
-  const hdr = g.querySelector('.zone-hdr-rect');
-  hdr.setAttribute('width', zone.w);
-  hdr.setAttribute('fill', sel ? zt.color : zt.border);
-  hdr.setAttribute('opacity', sel ? '0.25' : '0.18');
-
-  const lbl = g.querySelector('.zone-lbl-text');
-  lbl.setAttribute('fill', zt.color);
-  lbl.textContent = zone.label || zt.label;
-
-  const ring = g.querySelector('.zone-ring-rect');
-  ring.setAttribute('x', '-3'); ring.setAttribute('y', '-3');
-  ring.setAttribute('width',  zone.w+6);
-  ring.setAttribute('height', zone.h+6);
-  ring.setAttribute('display', sel ? '' : 'none');
-
-  g.setAttribute('transform', `translate(${zone.x},${zone.y})`);
 }
 
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 function buildSidebar() {
-  const sb = $('sidebar');
   let h = '';
-
-  // Component nodes by category
   for (const cat of CATS) {
     const items = Object.entries(NT).filter(([,v]) => v.cat===cat);
     if (!items.length) continue;
-    h += `<div class="cat-hdr">${esc(cat)}</div>`;
+    h += `<div class="cat-hdr">${cat}</div>`;
     for (const [k, nt] of items) {
-      h += `<div class="sitem" data-type="${esc(k)}" data-kind="node">
-        <div class="sitem-ic" style="background:${esc(nt.color)}18">${esc(nt.emoji)}</div>
-        <div class="sitem-lbl">${esc(nt.label)}</div>
+      h += `<div class="sitem" data-type="${k}" onclick="startPlace('${k}')">
+        <div class="sitem-ic" style="background:${nt.color}18">${nt.emoji}</div>
+        <div class="sitem-lbl">${nt.label}</div>
       </div>`;
     }
   }
-
-  // Boundary zones section
-  h += `<div class="cat-hdr">Boundary Zones</div>`;
-  for (const [k, zt] of Object.entries(ZT)) {
-    h += `<div class="sitem" data-zone="${esc(k)}" data-kind="zone">
-      <div class="sitem-ic" style="background:${esc(zt.color)}22;border:1.5px dashed ${esc(zt.border)};border-radius:3px"></div>
-      <div class="sitem-lbl">${esc(zt.label)}</div>
-    </div>`;
-  }
-
-  sb.innerHTML = h;
-
-  // Attach click handlers (avoids inline handlers with unescaped data)
-  sb.querySelectorAll('.sitem[data-kind="node"]').forEach(el => {
-    el.addEventListener('click', () => startPlace(el.dataset.type));
-  });
-  sb.querySelectorAll('.sitem[data-kind="zone"]').forEach(el => {
-    el.addEventListener('click', () => startZone(el.dataset.zone));
-  });
+  $('sidebar').innerHTML = h;
 }
 
 function startPlace(type) {
-  if (S.placing===type) { cancelMode(); return; }
-  cancelMode();
-  S.placing = type;
+  if (S.placing===type) { cancelPlace(); return; }
+  S.placing = type; S.connectMode = false; S.connectFrom = null;
+  $('btnConnect').classList.remove('active');
+  document.querySelectorAll('.sitem').forEach(el => el.classList.remove('active'));
   document.querySelector(`.sitem[data-type="${type}"]`)?.classList.add('active');
   $('canvas-svg').classList.add('placing');
   hint(`Click canvas to place ${NT[type].label} — Esc to cancel`);
 }
 
-function startZone(type) {
-  if (S.placingZone===type) { cancelMode(); return; }
-  cancelMode();
-  S.placingZone = type;
-  document.querySelector(`.sitem[data-zone="${type}"]`)?.classList.add('active');
-  $('canvas-svg').classList.add('zonedraw');
-  hint(`Drag on canvas to draw ${ZT[type].label} boundary — Esc to cancel`);
-}
-
-function cancelMode() {
-  S.placing = null; S.placingZone = null;
-  S.connectMode = false; S.connectFrom = null;
-  $('btnConnect').classList.remove('active');
-  $('canvas-svg').classList.remove('placing', 'zonedraw');
+function cancelPlace() {
+  S.placing = null;
   document.querySelectorAll('.sitem').forEach(el => el.classList.remove('active'));
-  $('rubber-band').style.display = 'none';
+  $('canvas-svg').classList.remove('placing');
   hint();
 }
 
@@ -859,306 +534,69 @@ function showProps() {
   if (!S.selected) { panel.classList.remove('show'); return; }
   panel.classList.add('show');
 
-  // Multi-select summary
-  if (S.multiSelected.size > 1) {
-    hdr.textContent = `${S.multiSelected.size} Components`;
-    content.innerHTML = `<div class="props-sect" style="color:#64748b;font-size:11px">
-      ${S.multiSelected.size} nodes selected. Move together or press Delete to remove all.
-    </div>`;
-    return;
-  }
-
   if (S.selected.type==='node') {
     const node = S.nodes.find(n => n.id===S.selected.id); if (!node) return;
     const nt = NT[node.type];
     hdr.textContent = nt.label;
     let h = `<div class="props-sect"><label>Label</label>
-      <input value="${esc(node.label||nt.label)}"
-             onchange="updNode('label',this.value)"
-             onblur="updNode('label',this.value)"/>
+      <input value="${esc(node.label||nt.label)}" onchange="updNode('label',this.value)"/>
     </div><div class="props-sect"><label>Notes</label>
-      <textarea onchange="updNode('notes',this.value)"
-                onblur="pushHistory()">${esc(node.notes||'')}</textarea>
+      <textarea onchange="updNode('notes',this.value)">${esc(node.notes||'')}</textarea>
     </div>`;
-
-    // PCI-specific guidance
     if (node.type==='chd_db')
-      h += `<div class="warn-badge">⚠️ Stores CHD — encrypt at rest (Req 3.5). Minimise data stored and retention period.</div>`;
+      h += `<div class="warn-badge">⚠️ Stores CHD — encrypt at rest (Req 3.5). Minimize data stored.</div>`;
     if (node.type==='pos' || node.type==='card_reader')
-      h += `<div class="warn-badge">📋 POI device — PTS validation &amp; tamper protection required (Req 9.3).</div>`;
+      h += `<div class="warn-badge">📋 POI device — PTS validation & tamper protection required (Req 9.9).</div>`;
     if (node.type==='firewall')
-      h += `<div class="ok-badge">✅ NSC — restrict inbound/outbound traffic per Req 1. Document all rules and review every 6 months (Req 1.2.2).</div>`;
+      h += `<div class="ok-badge">✅ Segment & restrict traffic per Req 1. Document all rules.</div>`;
     if (node.type==='tokenization')
-      h += `<div class="ok-badge">✅ Tokenization reduces PCI scope. Confirm vault is properly segmented and only the vault can de-tokenize.</div>`;
+      h += `<div class="ok-badge">✅ Tokenization reduces PCI scope. Confirm vault placement.</div>`;
     if (node.type==='hsm')
-      h += `<div class="ok-badge">✅ HSM required for key management (Req 3.7). Use a FIPS 140-2 or 140-3 Level 3 validated device.</div>`;
-    if (node.type==='p2pe')
-      h += `<div class="ok-badge">✅ P2PE encrypts PAN at point of interaction. Confirm solution is PCI P2PE listed to maximise scope reduction.</div>`;
-    if (node.type==='cloud_provider')
-      h += `<div class="warn-badge">☁️ Cloud provider — obtain current AOC / Responsibility Matrix. Map which PCI DSS requirements are inherited vs. shared (Req 12.8).</div>`;
-    if (node.type==='tpsp')
-      h += `<div class="warn-badge">🤝 Third-Party Service Provider — maintain written agreement (Req 12.8.2) and annual compliance confirmation (Req 12.8.4).</div>`;
-    if (node.type==='enc_proxy')
-      h += `<div class="ok-badge">✅ Encryption proxy intercepts PAN before it reaches backend systems. Confirm TLS termination scope and key management.</div>`;
-    if (node.type==='waf')
-      h += `<div class="ok-badge">✅ WAF required for public-facing web applications (Req 6.4). Ensure it is in active blocking mode and rules are reviewed regularly.</div>`;
-
+      h += `<div class="ok-badge">✅ HSM required for key management (Req 3.7). Use FIPS 140-2 validated device.</div>`;
     content.innerHTML = h;
-
-  } else if (S.selected.type==='edge') {
+  } else {
     const edge = S.edges.find(e => e.id===S.selected.id); if (!edge) return;
     hdr.textContent = 'Connection';
     const opts = Object.entries(ET)
-      .map(([k,v]) => `<option value="${esc(k)}"${edge.type===k?' selected':''}>${esc(v.label)}</option>`)
+      .map(([k,v]) => `<option value="${k}"${edge.type===k?' selected':''}>${v.label}</option>`)
       .join('');
     let h = `<div class="props-sect"><label>Flow Type</label>
-      <select onchange="updEdgeType(this.value)">${opts}</select>
+      <select onchange="updEdge('type',this.value)">${opts}</select>
     </div><div class="props-sect"><label>Label</label>
-      <input value="${esc(edge.label||'')}"
-             onchange="updEdge('label',this.value)"
-             placeholder="e.g. PAN + CVV"/>
+      <input value="${esc(edge.label||'')}" onchange="updEdge('label',this.value)" placeholder="e.g. PAN + CVV"/>
     </div>`;
-
-    if (edge.type==='encrypted') {
-      const csOpts = ['TLS 1.3','TLS 1.2 + AES-256-GCM','TLS 1.2 + AES-128-GCM',
-                      'TLS 1.2 + CHACHA20-POLY1305','ECDHE-RSA-AES256-GCM-SHA384','Custom']
-        .map(o => `<option${(edge.cipherSuite||'')=== o?' selected':''}>${esc(o)}</option>`).join('');
-      h += `<div class="props-sect"><label>Cipher Suite</label>
-        <select onchange="updEdge('cipherSuite',this.value)">
-          <option value="">— select —</option>${csOpts}
-        </select>
-      </div>`;
-      if (edge.cipherSuite==='Custom') {
-        h += `<div class="props-sect"><label>Custom Cipher Suite</label>
-          <input value="${esc(edge.cipherSuiteCustom||'')}"
-                 onchange="updEdge('cipherSuiteCustom',this.value)"
-                 placeholder="e.g. DHE-RSA-AES128-SHA256"/>
-        </div>`;
-      }
-      h += `<div class="ok-badge">✅ Use TLS 1.2+ with strong cipher suites (Req 4.2.1). Disable SSL, TLS 1.0, TLS 1.1, and weak ciphers.</div>`;
-    }
-
-    if (edge.type==='sad') {
-      const sadOpts = ['Track 1 / Track 2 Equivalent','CVV / CVV2 / CID / CAV2',
-                       'PIN / PIN Block','Service Code','Full Magnetic Stripe Data','Multiple SAD Elements']
-        .map(o => `<option${(edge.sadSubtype||'')=== o?' selected':''}>${esc(o)}</option>`).join('');
-      h += `<div class="props-sect"><label>SAD Sub-type</label>
-        <select onchange="updEdge('sadSubtype',this.value)">
-          <option value="">— select —</option>${sadOpts}
-        </select>
-      </div>`;
-      // Check if SAD flows into a storage node — direct violation
-      const tgtNode = S.nodes.find(n => n.id===edge.targetId);
-      const storageTypes = ['chd_db','backup','log_server'];
-      if (tgtNode && storageTypes.includes(tgtNode.type)) {
-        h += `<div class="warn-badge">🚨 CRITICAL VIOLATION: SAD is flowing into a storage component (${esc(NT[tgtNode.type].label)}). SAD must NEVER be stored after authorisation (Req 3.3.1). Redesign this flow immediately.</div>`;
-      } else {
-        h += `<div class="warn-badge">🚨 SAD must NEVER be stored after authorisation is complete (Req 3.3.1). SAD in transit must be encrypted and access strictly limited. Confirm this flow is pre-authorisation only.</div>`;
-      }
-    }
-
     if (edge.type==='pan')
-      h += `<div class="warn-badge">🚨 Unencrypted PAN in transit violates Req 4.2.1! Encrypt with TLS 1.2+ or tokenize before transit.</div>`;
+      h += `<div class="warn-badge">🚨 Unencrypted PAN violates Req 4.2.1! Use TLS encryption or tokenize before transit.</div>`;
+    if (edge.type==='encrypted')
+      h += `<div class="ok-badge">✅ Use TLS 1.2+ with strong cipher suites (Req 4.2.1).</div>`;
     if (edge.type==='tokenized')
-      h += `<div class="ok-badge">✅ Tokenized data is out of PCI scope if the tokenization vault is properly segmented and only the vault can de-tokenize.</div>`;
-    if (edge.type==='capture')
-      h += `<div class="ok-badge">✅ Capture flow: funds moved post-authorisation. Ensure this flow is encrypted (Req 4.2.1) and all capture events are logged (Req 10).</div>`;
-    if (edge.type==='settlement')
-      h += `<div class="ok-badge">✅ Settlement flow: confirm batch totals are reconciled and transmission is encrypted (Req 4.2.1).</div>`;
-    if (edge.type==='auth')
-      h += `<div class="ok-badge">✅ Authorisation flow: ensure request/response is encrypted (Req 4.2.1) and that no SAD is logged during this exchange (Req 3.3.1).</div>`;
-
-    content.innerHTML = h;
-
-  } else if (S.selected.type==='zone') {
-    const zone = S.zones.find(z => z.id===S.selected.id); if (!zone) return;
-    const zt = ZT[zone.type||'cde'];
-    hdr.textContent = 'Zone';
-    const typeOpts = Object.entries(ZT)
-      .map(([k,v]) => `<option value="${esc(k)}"${zone.type===k?' selected':''}>${esc(v.label)}</option>`)
-      .join('');
-    let h = `<div class="props-sect"><label>Zone Type</label>
-      <select onchange="updZone('type',this.value)">${typeOpts}</select>
-    </div><div class="props-sect"><label>Custom Label</label>
-      <input value="${esc(zone.label||'')}"
-             onchange="updZone('label',this.value)"
-             placeholder="${esc(zt.label)}"/>
-    </div>`;
-
-    if (zone.type==='cde')
-      h += `<div class="warn-badge">🔴 CDE — all PCI DSS requirements apply to all components in this zone. Minimise the CDE footprint.</div>`;
-    if (zone.type==='connected')
-      h += `<div class="warn-badge">🟡 Connected to CDE — components may be in scope depending on connectivity and security controls (segmentation). Review carefully with your QSA.</div>`;
-    if (zone.type==='outofscope')
-      h += `<div class="ok-badge">✅ Out of Scope — confirm effective segmentation from the CDE (e.g., firewall, no direct connectivity). Segmentation should be verified annually (Req 11.4.1).</div>`;
-
+      h += `<div class="ok-badge">✅ Tokenized data is out of PCI scope if vault is properly segmented.</div>`;
     content.innerHTML = h;
   }
 }
 
-function updNode(key, val) {
-  const node = S.nodes.find(n => n.id===S.selected?.id);
-  if (!node) return;
-  if (key === 'label') {
-    pushHistory();
-    node[key] = val;
-    renderNodes();
-  } else {
-    node[key] = val;
-  }
+function updNode(k, v) {
+  const n = S.nodes.find(n => n.id===S.selected?.id);
+  if (n) { n[k] = v; renderNodes(); }
 }
-
-function updEdge(key, val) {
-  pushHistory();
-  const edge = S.edges.find(e => e.id===S.selected?.id);
-  if (edge) { edge[key] = val; renderEdges(); showProps(); }
-}
-
-function updEdgeType(val) {
-  pushHistory();
-  const edge = S.edges.find(e => e.id===S.selected?.id);
-  if (edge) { edge.type = val; edge.cipherSuite = ''; edge.sadSubtype = ''; renderEdges(); showProps(); }
-}
-
-function updZone(key, val) {
-  pushHistory();
-  const zone = S.zones.find(z => z.id===S.selected?.id);
-  if (zone) { zone[key] = val; renderZones(); showProps(); }
-}
-
-// ─── NARRATIVE / VERSION CONTROL ──────────────────────────────────────────────
-function openNarrative() {
-  const m = $('narrative-modal');
-  m.classList.remove('hide');
-  $('nar-ta').value  = S.meta.narrative || '';
-  $('nar-ver').value = S.meta.version   || '1.0';
-  renderVerTable();
-}
-
-function closeNarrative() {
-  S.meta.narrative = $('nar-ta').value;
-  S.meta.version   = $('nar-ver').value;
-  $('narrative-modal').classList.add('hide');
-}
-
-function renderVerTable() {
-  const tbody = $('ver-tbody');
-  if (!S.meta.versions.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="color:#94a3b8;text-align:center;padding:12px">No version entries yet</td></tr>';
-    return;
-  }
-  tbody.innerHTML = S.meta.versions.map((v, i) =>
-    `<tr>
-      <td><span class="ver-badge">${esc(v.ver)}</span></td>
-      <td>${esc(v.date)}</td>
-      <td>${esc(v.notes)}</td>
-      <td><button class="ver-del" onclick="removeVersion(${i})" title="Remove">✕</button></td>
-    </tr>`
-  ).join('');
-}
-
-function addVersion() {
-  const ver   = $('ver-add-num').value.trim();
-  const notes = $('ver-add-notes').value.trim();
-  if (!ver) { toast('Enter a version number first'); return; }
-  const date = new Date().toISOString().slice(0,10);
-  S.meta.versions.unshift({ ver, date, notes });
-  S.meta.version = ver;
-  $('nar-ver').value = ver;
-  $('ver-add-num').value = ''; $('ver-add-notes').value = '';
-  renderVerTable();
-  toast(`Version ${ver} added ✓`);
-}
-
-function removeVersion(idx) {
-  S.meta.versions.splice(idx, 1);
-  renderVerTable();
-}
-
-// ─── INLINE LABEL EDITOR ──────────────────────────────────────────────────────
-let _labelTarget = null; // { type: 'node'|'zone', id }
-
-function openLabelEditor(type, id) {
-  const wrap = $('label-editor-wrap');
-  const inp  = $('label-editor-input');
-  const r    = $('canvas-svg').getBoundingClientRect();
-
-  let currentLabel = '', x, y, w;
-
-  if (type === 'node') {
-    const node = S.nodes.find(n => n.id===id); if (!node) return;
-    const nt   = NT[node.type];
-    currentLabel = node.label || nt.label;
-    x = r.left + S.pan.x + node.x * S.zoom;
-    y = r.top  + S.pan.y + node.y * S.zoom + (NH * S.zoom / 2) - 14;
-    w = Math.max(120, NW * S.zoom);
-  } else if (type === 'zone') {
-    const zone = S.zones.find(z => z.id===id); if (!zone) return;
-    const zt   = ZT[zone.type||'cde'];
-    currentLabel = zone.label || zt.label;
-    x = r.left + S.pan.x + zone.x * S.zoom;
-    y = r.top  + S.pan.y + zone.y * S.zoom + 4;
-    w = Math.max(120, Math.min(zone.w * S.zoom, 280));
-  }
-
-  _labelTarget = { type, id };
-  inp.value = currentLabel;
-  inp.style.width = w + 'px';
-  inp.style.fontSize = Math.max(10, Math.min(14, 13 * S.zoom)) + 'px';
-  wrap.style.left = x + 'px';
-  wrap.style.top  = y + 'px';
-  wrap.style.display = 'block';
-  setTimeout(() => { inp.focus(); inp.select(); }, 10);
-}
-
-function commitLabel() {
-  if (!_labelTarget) return;
-  const inp = $('label-editor-input');
-  const val = inp.value.trim();
-  pushHistory();
-  if (_labelTarget.type === 'node') {
-    const node = S.nodes.find(n => n.id===_labelTarget.id);
-    if (node) { node.label = val || NT[node.type].label; renderNodes(); showProps(); }
-  } else if (_labelTarget.type === 'zone') {
-    const zone = S.zones.find(z => z.id===_labelTarget.id);
-    if (zone) { zone.label = val; renderZones(); showProps(); }
-  }
-  closeLabelEditor();
-}
-
-function closeLabelEditor() {
-  $('label-editor-wrap').style.display = 'none';
-  _labelTarget = null;
-}
-
-function onLabelKey(e) {
-  if (e.key==='Enter')  { e.preventDefault(); commitLabel(); }
-  if (e.key==='Escape') { e.preventDefault(); closeLabelEditor(); }
+function updEdge(k, v) {
+  const e = S.edges.find(e => e.id===S.selected?.id);
+  if (e) { e[k] = v; renderEdges(); showProps(); }
 }
 
 // ─── SELECTION ────────────────────────────────────────────────────────────────
-function select(type, id, addToMulti=false) {
-  if (!addToMulti) S.multiSelected.clear();
+function select(type, id) {
   S.selected = id ? {type, id} : null;
-  if (type==='node' && id) {
-    if (addToMulti) {
-      if (S.multiSelected.has(id)) { S.multiSelected.delete(id); if (S.multiSelected.size===0) S.selected=null; }
-      else S.multiSelected.add(id);
-    } else {
-      S.multiSelected.add(id);
-    }
-  }
   renderAll(); showProps();
 }
 
 // ─── EVENT HANDLERS ───────────────────────────────────────────────────────────
 function onNodeDown(e) {
-  if (S.placing || S.placingZone) return;
+  if (S.placing) return;
   if (e.target.classList.contains('port')) return;
   e.stopPropagation();
   const nodeId = this.dataset.id;
 
-  // Connect mode
   if (S.connectMode) {
     const node = S.nodes.find(n => n.id===nodeId);
     if (!S.connectFrom) {
@@ -1174,35 +612,17 @@ function onNodeDown(e) {
     return;
   }
 
-  // Shift+click = multi-select toggle
-  const addToMulti = e.shiftKey;
-  select('node', nodeId, addToMulti);
-
+  select('node', nodeId);
   const pos = svgCoord(e.clientX, e.clientY);
-
-  // Determine which nodes to drag
-  let dragNodeIds;
-  if (S.multiSelected.size > 1 && S.multiSelected.has(nodeId)) {
-    dragNodeIds = [...S.multiSelected];
-  } else {
-    dragNodeIds = [nodeId];
-  }
-
-  const dragNodes = dragNodeIds.map(nid => {
-    const n = S.nodes.find(nd => nd.id===nid);
-    return { nodeId:nid, ox:n.x, oy:n.y };
-  });
-
-  // Snapshot before drag begins (will be popped if no movement)
-  const snapshot = stateSnapshot();
-  S.dragging = { nodes:dragNodes, mx:pos.x, my:pos.y, hasMoved:false, snapshot };
+  const node = S.nodes.find(n => n.id===nodeId);
+  S.dragging = {nodeId, mx:pos.x, my:pos.y, ox:node.x, oy:node.y};
 }
 
 function onPortDown(e) {
   e.stopPropagation(); e.preventDefault();
-  const g      = this.closest('.node'), nodeId = g.dataset.id, port = this.dataset.port;
-  const node   = S.nodes.find(n => n.id===nodeId);
-  const pp     = portPos(node, port);
+  const g = this.closest('.node'), nodeId = g.dataset.id, port = this.dataset.port;
+  const node = S.nodes.find(n => n.id===nodeId);
+  const pp = portPos(node, port);
   S.connectFrom = {nodeId, port, x:pp.x, y:pp.y};
   const rb = $('rubber-band');
   rb.setAttribute('x1', pp.x); rb.setAttribute('y1', pp.y);
@@ -1211,7 +631,7 @@ function onPortDown(e) {
 }
 
 function onEdgeDown(e) {
-  if (S.placing || S.placingZone) return;
+  if (S.placing) return;
   e.stopPropagation();
   select('edge', this.dataset.id);
 }
@@ -1219,156 +639,55 @@ function onEdgeDown(e) {
 function onNodeCtx(e) {
   e.preventDefault(); e.stopPropagation();
   const id = this.dataset.id; select('node', id);
-  $('ctx-edit').style.display = '';
-  $('ctx-duplicate').style.display = '';
   showCtx(e.clientX, e.clientY, {type:'node', id});
 }
 
 function onEdgeCtx(e) {
   e.preventDefault(); e.stopPropagation();
   const id = this.dataset.id; select('edge', id);
-  $('ctx-edit').style.display = 'none';
-  $('ctx-duplicate').style.display = 'none';
   showCtx(e.clientX, e.clientY, {type:'edge', id});
 }
 
 function onNodeDbl(e) {
   e.stopPropagation();
   const id = this.dataset.id;
-  openLabelEditor('node', id);
-}
-
-function onZoneDown(e) {
-  if (S.placing || S.placingZone) return;
-  e.stopPropagation();
-  const zoneId = this.dataset.id;
-  select('zone', zoneId);
-  const pos  = svgCoord(e.clientX, e.clientY);
-  const zone = S.zones.find(z => z.id===zoneId);
-  const snapshot = stateSnapshot();
-  S.dragging = { zoneId, mx:pos.x, my:pos.y, ox:zone.x, oy:zone.y, hasMoved:false, snapshot };
-}
-
-function onZoneDbl(e) {
-  e.stopPropagation();
-  openLabelEditor('zone', this.dataset.id);
-}
-
-function onZoneCtx(e) {
-  e.preventDefault(); e.stopPropagation();
-  const id = this.dataset.id; select('zone', id);
-  $('ctx-edit').style.display = '';
-  $('ctx-duplicate').style.display = 'none';
-  showCtx(e.clientX, e.clientY, {type:'zone', id});
+  const node = S.nodes.find(n => n.id===id); if (!node) return;
+  const nt = NT[node.type];
+  const v = prompt('Edit label:', node.label||nt.label);
+  if (v !== null) { node.label = v.trim()||nt.label; renderNodes(); showProps(); }
 }
 
 // ─── CANVAS EVENTS ────────────────────────────────────────────────────────────
 $('canvas-svg').addEventListener('mousedown', e => {
   const tgt = e.target;
-  const onBackground = tgt.id==='canvas-bg' || tgt===$('viewport') || tgt===$('canvas-svg');
-  if (!onBackground) return;
-
-  closeLabelEditor();
-
-  // Place a node
-  if (S.placing) {
-    const pos = svgCoord(e.clientX, e.clientY);
-    addNode(S.placing, snap(pos.x - NW/2), snap(pos.y - NH/2));
-    return;
+  if (tgt.id==='canvas-bg' || tgt===$('viewport') || tgt===$('canvas-svg')) {
+    if (S.placing) {
+      const pos = svgCoord(e.clientX, e.clientY);
+      addNode(S.placing, pos.x-NW/2, pos.y-NH/2);
+      return;
+    }
+    S.panning = {mx:e.clientX, my:e.clientY, opx:S.pan.x, opy:S.pan.y};
+    select(null, null);
   }
-
-  // Start drawing a zone
-  if (S.placingZone) {
-    const pos = svgCoord(e.clientX, e.clientY);
-    S.zoneDraw = { type:S.placingZone, sx:pos.x, sy:pos.y };
-    const pr = $('zone-preview-rect');
-    pr.setAttribute('x', pos.x); pr.setAttribute('y', pos.y);
-    pr.setAttribute('width', 0);  pr.setAttribute('height', 0);
-    pr.style.display = '';
-    const zt = ZT[S.placingZone];
-    pr.setAttribute('stroke', zt.border);
-    pr.setAttribute('fill', zt.bg);
-    return;
-  }
-
-  // Start box-select (no shift = clear; shift = add to existing)
-  if (!e.shiftKey) {
-    S.multiSelected.clear();
-    S.selected = null;
-    renderAll(); showProps();
-  }
-
-  const pos = svgCoord(e.clientX, e.clientY);
-  S.boxSelect = { sx:pos.x, sy:pos.y };
-  S.panning   = null;
-
-  // Detect if this could also be a pan (decided in mousemove if no drag threshold)
-  S.panning = { mx:e.clientX, my:e.clientY, opx:S.pan.x, opy:S.pan.y, hadBoxSelect:false };
 });
 
 $('canvas-svg').addEventListener('mousemove', e => {
   if (S.dragging) {
-    const pos = svgCoord(e.clientX, e.clientY);
-    const dx  = pos.x - S.dragging.mx;
-    const dy  = pos.y - S.dragging.my;
-
-    if (!S.dragging.hasMoved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
-      S.dragging.hasMoved = true;
-    }
-
-    if (S.dragging.zoneId) {
-      // Zone drag
-      const zone = S.zones.find(z => z.id===S.dragging.zoneId);
-      if (zone) {
-        zone.x = S.dragging.ox + dx;
-        zone.y = S.dragging.oy + dy;
-        const g = $('zones-layer').querySelector(`.zone[data-id="${zone.id}"]`);
-        if (g) updZoneEl(g, zone);
-      }
-    } else if (S.dragging.nodes) {
-      // Node(s) drag
-      for (const {nodeId, ox, oy} of S.dragging.nodes) {
-        const node = S.nodes.find(n => n.id===nodeId); if (!node) continue;
-        node.x = ox + dx;
-        node.y = oy + dy;
-        const g = $('nodes-layer').querySelector(`.node[data-id="${nodeId}"]`);
-        if (g) g.setAttribute('transform', `translate(${node.x},${node.y})`);
-        S.edges.filter(ed => ed.sourceId===nodeId || ed.targetId===nodeId).forEach(edge => {
-          const eg = $('edges-layer').querySelector(`.edge[data-id="${edge.id}"]`);
-          if (eg) updEdgeEl(eg, edge);
-        });
-      }
-    }
-
+    const pos  = svgCoord(e.clientX, e.clientY);
+    const node = S.nodes.find(n => n.id===S.dragging.nodeId); if (!node) return;
+    node.x = S.dragging.ox + (pos.x - S.dragging.mx);
+    node.y = S.dragging.oy + (pos.y - S.dragging.my);
+    // Fast update: only move the node group and its edges
+    const g = $('nodes-layer').querySelector(`.node[data-id="${node.id}"]`);
+    if (g) g.setAttribute('transform', `translate(${node.x},${node.y})`);
+    S.edges.filter(e => e.sourceId===node.id || e.targetId===node.id).forEach(edge => {
+      const eg = $('edges-layer').querySelector(`.edge[data-id="${edge.id}"]`);
+      if (eg) updEdgeEl(eg, edge);
+    });
   } else if (S.connectFrom && !S.connectMode) {
-    // Rubber-band for port drag
     const pos = svgCoord(e.clientX, e.clientY);
     $('rubber-band').setAttribute('x2', pos.x);
     $('rubber-band').setAttribute('y2', pos.y);
-
-  } else if (S.zoneDraw) {
-    // Zone draw preview
-    const pos = svgCoord(e.clientX, e.clientY);
-    const x = Math.min(pos.x, S.zoneDraw.sx), y = Math.min(pos.y, S.zoneDraw.sy);
-    const w = Math.abs(pos.x - S.zoneDraw.sx), h = Math.abs(pos.y - S.zoneDraw.sy);
-    const pr = $('zone-preview-rect');
-    pr.setAttribute('x', x); pr.setAttribute('y', y);
-    pr.setAttribute('width', w); pr.setAttribute('height', h);
-
-  } else if (S.boxSelect) {
-    // Box-select marquee
-    const pos = svgCoord(e.clientX, e.clientY);
-    const x = Math.min(pos.x, S.boxSelect.sx), y = Math.min(pos.y, S.boxSelect.sy);
-    const w = Math.abs(pos.x - S.boxSelect.sx), h = Math.abs(pos.y - S.boxSelect.sy);
-    const br = $('box-select-rect');
-    if (w > 4 || h > 4) {
-      br.setAttribute('x', x); br.setAttribute('y', y);
-      br.setAttribute('width', w); br.setAttribute('height', h);
-      br.style.display = '';
-      // Stop panning while box-selecting
-      S.panning = null;
-    }
-
   } else if (S.panning) {
     S.pan.x = S.panning.opx + (e.clientX - S.panning.mx);
     S.pan.y = S.panning.opy + (e.clientY - S.panning.my);
@@ -1377,30 +696,7 @@ $('canvas-svg').addEventListener('mousemove', e => {
 });
 
 $('canvas-svg').addEventListener('mouseup', e => {
-  if (S.dragging) {
-    if (S.dragging.hasMoved) {
-      // Apply grid snap after drag
-      if (S.dragging.zoneId) {
-        const zone = S.zones.find(z => z.id===S.dragging.zoneId);
-        if (zone && S.snapGrid) { zone.x = snap(zone.x); zone.y = snap(zone.y); }
-      } else {
-        for (const {nodeId} of S.dragging.nodes) {
-          const node = S.nodes.find(n => n.id===nodeId);
-          if (node && S.snapGrid) { node.x = snap(node.x); node.y = snap(node.y); }
-        }
-      }
-      // Commit the snapshot taken at drag start
-      S.history.push(S.dragging.snapshot);
-      if (S.history.length > MAX_HIST) S.history.shift();
-      S.future = [];
-      setDirty(true);
-      updateHistoryButtons();
-      renderAll();
-    }
-    S.dragging = null;
-
-  } else if (S.connectFrom && !S.connectMode) {
-    // Port drag connect
+  if (S.connectFrom && !S.connectMode) {
     const pos = svgCoord(e.clientX, e.clientY);
     const tgt = nodeAt(pos.x, pos.y, S.connectFrom.nodeId);
     if (tgt) {
@@ -1411,41 +707,8 @@ $('canvas-svg').addEventListener('mouseup', e => {
     }
     $('rubber-band').style.display = 'none';
     S.connectFrom = null;
-
-  } else if (S.zoneDraw) {
-    // Commit zone draw
-    const pos = svgCoord(e.clientX, e.clientY);
-    const x   = snap(Math.min(pos.x, S.zoneDraw.sx));
-    const y   = snap(Math.min(pos.y, S.zoneDraw.sy));
-    const w   = Math.max(80, snap(Math.abs(pos.x - S.zoneDraw.sx)));
-    const h   = Math.max(60, snap(Math.abs(pos.y - S.zoneDraw.sy)));
-    $('zone-preview-rect').style.display = 'none';
-    addZone(S.zoneDraw.type, x, y, w, h);
-    S.zoneDraw = null;
-    cancelMode();
-
-  } else if (S.boxSelect) {
-    // Finalise box-select
-    const pr = $('box-select-rect');
-    const bx = parseFloat(pr.getAttribute('x') ||0);
-    const by = parseFloat(pr.getAttribute('y') ||0);
-    const bw = parseFloat(pr.getAttribute('width') ||0);
-    const bh = parseFloat(pr.getAttribute('height')||0);
-    if (bw > 4 || bh > 4) {
-      S.nodes.forEach(node => {
-        const cx = node.x + NW/2, cy = node.y + NH/2;
-        if (cx >= bx && cx <= bx+bw && cy >= by && cy <= by+bh) {
-          S.multiSelected.add(node.id);
-          if (!S.selected) S.selected = {type:'node', id:node.id};
-        }
-      });
-      renderAll(); showProps();
-    }
-    pr.style.display = 'none';
-    S.boxSelect = null;
-
   }
-  S.panning = null;
+  S.dragging = null; S.panning = null;
 });
 
 $('canvas-svg').addEventListener('contextmenu', e => e.preventDefault());
@@ -1456,63 +719,22 @@ $('canvas-svg').addEventListener('wheel', e => {
   const mx = e.clientX - r.left, my = e.clientY - r.top;
   const f  = e.deltaY < 0 ? 1.12 : 0.88;
   const nz = Math.max(0.15, Math.min(4, S.zoom * f));
-  S.pan.x  = mx - (mx - S.pan.x) * (nz / S.zoom);
-  S.pan.y  = my - (my - S.pan.y) * (nz / S.zoom);
+  S.pan.x  = mx - (mx - S.pan.x) * (nz/S.zoom);
+  S.pan.y  = my - (my - S.pan.y) * (nz/S.zoom);
   S.zoom   = nz;
   updateVP();
 }, {passive:false});
 
-// ─── KEYBOARD SHORTCUTS ───────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
-  const inInput = e.target.matches('input,textarea,select');
-
   if (e.key==='Escape') {
-    cancelMode();
-    closeLabelEditor();
-    S.selected = null; S.multiSelected.clear();
-    renderAll(); showProps();
+    cancelPlace();
+    S.connectMode = false; S.connectFrom = null;
+    $('btnConnect').classList.remove('active');
+    $('rubber-band').style.display = 'none';
+    hint();
   }
-
-  if ((e.key==='Delete'||e.key==='Backspace') && !inInput) {
+  if ((e.key==='Delete'||e.key==='Backspace') && !e.target.matches('input,textarea,select')) {
     deleteSelected();
-  }
-
-  if (e.key==='z' && (e.ctrlKey||e.metaKey) && !e.shiftKey) {
-    e.preventDefault(); undo();
-  }
-  if ((e.key==='y' && (e.ctrlKey||e.metaKey)) ||
-      (e.key==='z' && (e.ctrlKey||e.metaKey) && e.shiftKey)) {
-    e.preventDefault(); redo();
-  }
-
-  if (e.key==='c' && (e.ctrlKey||e.metaKey) && !inInput) {
-    e.preventDefault(); copySelected();
-  }
-  if (e.key==='v' && (e.ctrlKey||e.metaKey) && !inInput) {
-    e.preventDefault(); pasteClipboard();
-  }
-  if (e.key==='d' && (e.ctrlKey||e.metaKey) && !inInput) {
-    e.preventDefault(); duplicateSelected();
-  }
-
-  // Arrow key nudge for selected node(s)
-  if (!inInput && S.selected?.type==='node') {
-    const d = GRID;
-    let dx=0, dy=0;
-    if (e.key==='ArrowLeft')  dx = -d;
-    if (e.key==='ArrowRight') dx =  d;
-    if (e.key==='ArrowUp')    dy = -d;
-    if (e.key==='ArrowDown')  dy =  d;
-    if (dx || dy) {
-      e.preventDefault();
-      pushHistory();
-      const ids = S.multiSelected.size>1 ? [...S.multiSelected] : [S.selected.id];
-      ids.forEach(id => {
-        const node = S.nodes.find(n => n.id===id);
-        if (node) { node.x += dx; node.y += dy; }
-      });
-      renderAll();
-    }
   }
 });
 
@@ -1527,158 +749,64 @@ function showCtx(x, y, tgt) {
   m.style.display = ''; m.style.left = x+'px'; m.style.top = y+'px';
 }
 function hideCtx() { $('ctx-menu').style.display = 'none'; S.ctxTarget = null; }
-
 function ctxEdit() {
   hideCtx();
-  if (!S.ctxTarget) return;
-  if (S.ctxTarget.type==='node' || S.ctxTarget.type==='zone') {
-    openLabelEditor(S.ctxTarget.type, S.ctxTarget.id);
+  if (S.ctxTarget?.type==='node') {
+    const node = S.nodes.find(n => n.id===S.ctxTarget.id); if (!node) return;
+    const v = prompt('Edit label:', node.label||NT[node.type].label);
+    if (v !== null) { node.label = v.trim()||NT[node.type].label; renderNodes(); showProps(); }
   }
 }
-
-function ctxDuplicate() {
-  hideCtx();
-  if (S.ctxTarget?.type==='node') duplicateNode(S.ctxTarget.id);
-}
-
-function ctxDelete() {
-  hideCtx();
-  if (S.ctxTarget) remove(S.ctxTarget.type, S.ctxTarget.id);
-}
+function ctxDelete() { hideCtx(); if (S.ctxTarget) remove(S.ctxTarget.type, S.ctxTarget.id); }
 
 // ─── ACTIONS ──────────────────────────────────────────────────────────────────
 function addNode(type, x, y) {
-  pushHistory();
-  const id = makeNodeId();
+  const id = mkId('n');
   S.nodes.push({id, type, x, y, label:'', notes:''});
   renderAll(); select('node', id);
   toast(`${NT[type].emoji} ${NT[type].label} added`);
 }
 
-function addEdge(srcId, tgtId, sp, tp) {
-  if (S.edges.find(e => e.sourceId===srcId && e.targetId===tgtId &&
-                         e.srcPort===sp && e.tgtPort===tp)) return;
-  pushHistory();
-  const id = makeEdgeId();
-  S.edges.push({id, sourceId:srcId, targetId:tgtId, srcPort:sp, tgtPort:tp,
-                type:'generic', label:''});
+function addEdge(sid, tid, sp, tp) {
+  if (S.edges.find(e => e.sourceId===sid && e.targetId===tid && e.srcPort===sp && e.tgtPort===tp)) return;
+  const id = mkId('e');
+  S.edges.push({id, sourceId:sid, targetId:tid, srcPort:sp, tgtPort:tp, type:'generic', label:''});
   renderAll(); select('edge', id);
   toast('Connection created — set flow type in Properties ➜');
 }
 
-function addZone(type, x, y, w, h) {
-  pushHistory();
-  const id = makeZoneId();
-  S.zones.push({id, type, x, y, w, h, label:''});
-  renderAll(); select('zone', id);
-  toast(`${ZT[type].label} zone added`);
-}
-
 function remove(type, id) {
-  pushHistory();
   if (type==='node') {
     S.nodes = S.nodes.filter(n => n.id!==id);
     S.edges = S.edges.filter(e => e.sourceId!==id && e.targetId!==id);
-    S.multiSelected.delete(id);
-  } else if (type==='edge') {
+  } else {
     S.edges = S.edges.filter(e => e.id!==id);
-  } else if (type==='zone') {
-    S.zones = S.zones.filter(z => z.id!==id);
   }
   S.selected = null; renderAll(); showProps();
 }
 
-function deleteSelected() {
-  if (S.multiSelected.size > 1) {
-    pushHistory();
-    const ids = new Set(S.multiSelected);
-    S.nodes = S.nodes.filter(n => !ids.has(n.id));
-    S.edges = S.edges.filter(e => !ids.has(e.sourceId) && !ids.has(e.targetId));
-    S.multiSelected.clear(); S.selected = null;
-    renderAll(); showProps();
-    toast(`${ids.size} components deleted`);
-  } else if (S.selected) {
-    remove(S.selected.type, S.selected.id);
-  }
-}
+function deleteSelected() { if (S.selected) remove(S.selected.type, S.selected.id); }
 
-function duplicateNode(nodeId) {
-  const src = S.nodes.find(n => n.id===nodeId); if (!src) return;
-  pushHistory();
-  const id = makeNodeId();
-  S.nodes.push({ ...src, id, x:src.x + GRID*2, y:src.y + GRID*2 });
-  renderAll(); select('node', id);
-  toast(`${NT[src.type].emoji} ${NT[src.type].label} duplicated`);
-}
-
-function duplicateSelected() {
-  if (S.selected?.type==='node') duplicateNode(S.selected.id);
-}
-
-// ─── COPY / PASTE ─────────────────────────────────────────────────────────────
-function copySelected() {
-  const ids = S.multiSelected.size > 1 ? [...S.multiSelected] :
-              S.selected?.type==='node' ? [S.selected.id] : [];
-  if (!ids.length) return;
-  S.clipboard = ids.map(id => ({ ...S.nodes.find(n => n.id===id) }));
-  toast(`${S.clipboard.length} node${S.clipboard.length>1?'s':''} copied`);
-}
-
-function pasteClipboard() {
-  if (!S.clipboard?.length) return;
-  pushHistory();
-  const offset  = GRID * 3;
-  const idMap   = {};
-  const newNodes = S.clipboard.map(n => {
-    const newId = makeNodeId();
-    idMap[n.id] = newId;
-    return { ...n, id:newId, x:n.x+offset, y:n.y+offset };
-  });
-  S.nodes.push(...newNodes);
-  S.multiSelected.clear();
-  newNodes.forEach(n => S.multiSelected.add(n.id));
-  S.selected = { type:'node', id:newNodes[0].id };
-  renderAll(); showProps();
-  toast(`${newNodes.length} node${newNodes.length>1?'s':''} pasted`);
-}
-
-// ─── MODES ────────────────────────────────────────────────────────────────────
 function toggleConnectMode() {
-  S.connectMode = !S.connectMode;
-  if (S.connectMode) { S.placing = null; S.placingZone = null; cancelMode(); S.connectMode = true; }
+  S.connectMode = !S.connectMode; S.placing = null; S.connectFrom = null; cancelPlace();
   $('btnConnect').classList.toggle('active', S.connectMode);
   hint(S.connectMode ? 'Connect mode: click a component to start a connection' : undefined);
 }
 
-function toggleSnap() {
-  S.snapGrid = !S.snapGrid;
-  $('btnSnap').classList.toggle('active', S.snapGrid);
-  toast(S.snapGrid ? 'Grid snap on' : 'Grid snap off');
-}
-
-// ─── DIAGRAM OPERATIONS ───────────────────────────────────────────────────────
 function newDiagram() {
-  if ((S.nodes.length || S.zones.length) && !confirm('Clear canvas and start a new diagram?')) return;
-  S.nodes=[]; S.edges=[]; S.zones=[];
-  S.selected=null; S.multiSelected.clear();
-  S.pan={x:0,y:0}; S.zoom=1;
-  S.nid=1; S.eid=1; S.zid=1;
-  S.history=[]; S.future=[];
-  setDirty(false); updateHistoryButtons();
+  if (S.nodes.length && !confirm('Clear canvas and start a new diagram?')) return;
+  S.nodes=[]; S.edges=[]; S.selected=null; S.pan={x:0,y:0}; S.zoom=1;
+  S.nid=1; S.eid=1;
   renderAll(); showProps(); hint();
 }
 
 function fitView() {
-  const allItems = [
-    ...S.nodes.map(n => ({x:n.x, y:n.y, w:NW, h:NH})),
-    ...S.zones.map(z => ({x:z.x, y:z.y, w:z.w, h:z.h})),
-  ];
-  if (!allItems.length) return;
+  if (!S.nodes.length) return;
   const pad=60, r=$('canvas-svg').getBoundingClientRect();
   let mnx=Infinity, mny=Infinity, mxx=-Infinity, mxy=-Infinity;
-  for (const i of allItems) {
-    mnx=Math.min(mnx,i.x);     mny=Math.min(mny,i.y);
-    mxx=Math.max(mxx,i.x+i.w); mxy=Math.max(mxy,i.y+i.h);
+  for (const n of S.nodes) {
+    mnx=Math.min(mnx,n.x); mny=Math.min(mny,n.y);
+    mxx=Math.max(mxx,n.x+NW); mxy=Math.max(mxy,n.y+NH);
   }
   const dw=mxx-mnx+pad*2, dh=mxy-mny+pad*2;
   S.zoom = Math.min(r.width/dw, r.height/dh, 2);
@@ -1687,120 +815,80 @@ function fitView() {
   updateVP();
 }
 
-// Zoom to canvas center
-function zoomTo(factor) {
-  const r  = $('canvas-svg').getBoundingClientRect();
-  const mx = r.width/2, my = r.height/2;
-  const nz = Math.max(0.15, Math.min(4, S.zoom * factor));
-  S.pan.x  = mx - (mx - S.pan.x) * (nz / S.zoom);
-  S.pan.y  = my - (my - S.pan.y) * (nz / S.zoom);
-  S.zoom   = nz;
-  updateVP();
-}
-function zoomIn()  { zoomTo(1.2);   }
-function zoomOut() { zoomTo(1/1.2); }
+function zoomIn()  { S.zoom = Math.min(4, S.zoom*1.2);   updateVP(); }
+function zoomOut() { S.zoom = Math.max(0.15, S.zoom/1.2); updateVP(); }
 
 // ─── SAVE / LOAD ──────────────────────────────────────────────────────────────
 function saveDiagram() {
-  const data = JSON.stringify({
-    nodes:S.nodes, edges:S.edges, zones:S.zones,
-    pan:S.pan, zoom:S.zoom, meta:S.meta
-  }, null, 2);
-  const blob = new Blob([data], {type:'application/json'});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = 'chd-diagram.json';
-  document.body.appendChild(a);
+  const data = JSON.stringify({nodes:S.nodes, edges:S.edges, pan:S.pan, zoom:S.zoom}, null, 2);
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([data], {type:'application/json'})),
+    download: 'chd-diagram.json'
+  });
   a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 100);
-  setDirty(false);
   toast('Diagram saved ✓');
 }
 
 function loadDiagram() { $('file-input').click(); }
 
-function validateDiagramData(data) {
-  if (typeof data !== 'object' || data === null) throw new Error('Not an object');
-  // Nodes
-  if (!Array.isArray(data.nodes)) throw new Error('Missing nodes array');
-  for (const n of data.nodes) {
-    if (typeof n.id !== 'string') throw new Error('Node missing id');
-    if (!NT[n.type])               throw new Error(`Unknown node type: ${n.type}`);
-    if (typeof n.x !== 'number' || typeof n.y !== 'number') throw new Error('Node missing x/y');
-  }
-  // Edges
-  if (!Array.isArray(data.edges)) throw new Error('Missing edges array');
-  const nodeIds = new Set(data.nodes.map(n => n.id));
-  for (const e of data.edges) {
-    if (typeof e.id !== 'string') throw new Error('Edge missing id');
-    if (!nodeIds.has(e.sourceId)) throw new Error(`Edge sourceId not found: ${e.sourceId}`);
-    if (!nodeIds.has(e.targetId)) throw new Error(`Edge targetId not found: ${e.targetId}`);
-  }
-  // Zones (optional, backward-compatible)
-  if (data.zones !== undefined && !Array.isArray(data.zones))
-    throw new Error('Zones must be an array');
-  return true;
-}
-
-function onFileLoad(ev) {
-  const file = ev.target.files[0]; if (!file) return;
+function onFileLoad(e) {
+  const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = ev => {
     try {
-      const data = JSON.parse(e.target.result);
-      validateDiagramData(data);
-      S.nodes  = data.nodes;
-      S.edges  = data.edges;
-      S.zones  = Array.isArray(data.zones) ? data.zones : [];
-      S.pan    = data.pan  || {x:0, y:0};
-      S.zoom   = data.zoom || 1;
-      S.meta   = data.meta || { narrative:'', version:'1.0', versions:[] };
-      // Use reduce to avoid spread stack overflow on large diagrams
-      S.nid = S.nodes.reduce((m, n) => Math.max(m, parseInt(n.id.slice(1))||0), 0) + 1;
-      S.eid = S.edges.reduce((m, e) => Math.max(m, parseInt(e.id.slice(1))||0), 0) + 1;
-      S.zid = S.zones.reduce((m, z) => Math.max(m, parseInt(z.id.slice(1))||0), 0) + 1;
-      S.selected = null; S.multiSelected.clear();
-      S.history=[]; S.future=[];
-      setDirty(false); updateHistoryButtons();
+      const data = JSON.parse(ev.target.result);
+      S.nodes = data.nodes || [];
+      S.edges = data.edges || [];
+      S.pan   = data.pan  || {x:0, y:0};
+      S.zoom  = data.zoom || 1;
+      S.nid   = Math.max(...S.nodes.map(n => parseInt(n.id.slice(1))||0), 0) + 1;
+      S.eid   = Math.max(...S.edges.map(e => parseInt(e.id.slice(1))||0), 0) + 1;
+      S.selected = null;
       renderAll(); showProps();
       toast('Diagram loaded ✓');
-    } catch (err) {
-      toast(`Failed to load — ${err.message || 'invalid file'}`);
-    }
+    } catch { toast('Failed to load — invalid file'); }
   };
   reader.readAsText(file);
-  ev.target.value = '';
+  e.target.value = '';
 }
 
 // ─── EXPORT ───────────────────────────────────────────────────────────────────
 function getCleanSVG() {
   const orig = $('canvas-svg');
   const cl   = orig.cloneNode(true);
-  const bg   = document.createElementNS(NS, 'rect');
+  const bg   = document.createElementNS(NS,'rect');
   bg.setAttribute('width','100%'); bg.setAttribute('height','100%'); bg.setAttribute('fill','#f8fafc');
   cl.insertBefore(bg, cl.firstChild);
-  cl.querySelectorAll('#rubber-band,.port,.sel-ring,.node-hit,.edge-hit,' +
-                      '#box-select-rect,#zone-preview-rect,.zone-ring-rect').forEach(el => el.remove());
+  cl.querySelectorAll('#rubber-band,.port,.sel-ring,.node-hit,.edge-hit').forEach(el => el.remove());
   const r = orig.getBoundingClientRect();
   cl.setAttribute('width', r.width); cl.setAttribute('height', r.height);
-  return { svgStr: new XMLSerializer().serializeToString(cl), w:r.width, h:r.height };
-}
 
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a   = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 150);
+  // Reset the viewport transform and set a viewBox based on actual node bounds.
+  // Keeping the live pan/zoom transform in exported SVG breaks marker sizing because
+  // markerUnits="userSpaceOnUse" sizes arrows in the raw coordinate system — the
+  // transform must be stripped so the viewBox drives scaling instead.
+  if (S.nodes.length) {
+    const pad = 50;
+    let mnx = Infinity, mny = Infinity, mxx = -Infinity, mxy = -Infinity;
+    for (const n of S.nodes) {
+      mnx = Math.min(mnx, n.x);      mny = Math.min(mny, n.y);
+      mxx = Math.max(mxx, n.x + NW); mxy = Math.max(mxy, n.y + NH);
+    }
+    cl.setAttribute('viewBox', `${mnx-pad} ${mny-pad} ${mxx-mnx+pad*2} ${mxy-mny+pad*2}`);
+    const vp = cl.querySelector('#viewport');
+    if (vp) vp.setAttribute('transform', '');
+  }
+
+  return { svgStr: new XMLSerializer().serializeToString(cl), w: r.width, h: r.height };
 }
 
 function exportSVG() {
   const {svgStr} = getCleanSVG();
-  downloadBlob(new Blob([svgStr], {type:'image/svg+xml'}), 'chd-flow-diagram.svg');
-  toast('SVG exported ✓');
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([svgStr], {type:'image/svg+xml'})),
+    download: 'chd-flow-diagram.svg'
+  });
+  a.click(); toast('SVG exported ✓');
 }
 
 function exportPNG() {
@@ -1815,45 +903,33 @@ function exportPNG() {
     ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, 0, w, h);
     ctx.drawImage(img, 0, 0);
     URL.revokeObjectURL(url);
-    downloadBlob(
-      dataURItoBlob(c.toDataURL('image/png')),
-      'chd-flow-diagram.png'
-    );
-    toast('PNG exported ✓');
+    const a = Object.assign(document.createElement('a'), {
+      href: c.toDataURL('image/png'),
+      download: 'chd-flow-diagram.png'
+    });
+    a.click(); toast('PNG exported ✓');
   };
   img.onerror = () => { toast('PNG export failed — try SVG'); URL.revokeObjectURL(url); };
   img.src = url;
 }
 
-function dataURItoBlob(dataURI) {
-  const [header, data] = dataURI.split(',');
-  const mime = header.match(/:(.*?);/)[1];
-  const bytes = atob(data);
-  const arr = new Uint8Array(bytes.length);
-  for (let i=0; i<bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-  return new Blob([arr], {type:mime});
-}
-
 function exportPDF() {
   const {svgStr} = getCleanSVG();
-  const narrative = S.meta.narrative ? `<p style="font-size:11px;color:#374151;line-height:1.6;white-space:pre-wrap;margin-bottom:16px">${esc(S.meta.narrative)}</p>` : '';
-  const version   = S.meta.version ? `<span style="font-size:10px;background:#eff6ff;color:#1d4ed8;border-radius:10px;padding:1px 8px;font-weight:700">v${esc(S.meta.version)}</span>` : '';
   const win = window.open('', '_blank');
-  if (!win) { toast('Allow pop-ups for PDF export'); return; }
+  if (!win) { toast('Allow popups for PDF export'); return; }
   win.document.write(`<!DOCTYPE html><html><head><title>CHD Flow Diagram</title>
   <style>
-    body { margin:24px 32px; font-family: 'Segoe UI',sans-serif; background:#fff; }
-    h2   { font-size:16px; margin-bottom:4px; color:#1e293b; display:flex; align-items:center; gap:10px; }
-    .meta{ font-size:10px; color:#64748b; margin-bottom:12px; }
-    svg  { max-width:100%; border:1px solid #e2e8f0; border-radius:6px; display:block; }
-    .narrative-hdr { font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 4px; }
-    .btn { margin-top:18px; padding:8px 18px; background:#1e293b; color:#fff; border:none; border-radius:5px; cursor:pointer; font-size:12px; }
-    @media print { .btn { display:none; } body { margin:12px; } }
+    body { margin:20px; font-family:sans-serif; background:#fff; }
+    h2   { font-size:15px; margin-bottom:4px; color:#1e293b; }
+    p    { font-size:10px; color:#64748b; margin-bottom:14px; }
+    svg  { max-width:100%; border:1px solid #e2e8f0; border-radius:6px; }
+    .btn { margin-top:14px; padding:7px 16px; background:#1e293b; color:#fff; border:none; border-radius:5px; cursor:pointer; font-size:12px; }
+    @media print { .btn { display:none; } }
   </style></head><body>
-  <h2>PCI DSS Cardholder Data Flow Diagram ${version}</h2>
-  <div class="meta">Generated: ${new Date().toLocaleDateString()} &nbsp;·&nbsp; For PCI DSS compliance documentation</div>
+  <h2>PCI DSS Cardholder Data Flow Diagram</h2>
+  <p>Generated: ${new Date().toLocaleDateString()} — For PCI DSS compliance documentation</p>
   ${svgStr}
-  ${S.meta.narrative ? `<div class="narrative-hdr">Diagram Narrative</div>${narrative}` : ''}
+  <br/>
   <button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button>
   </body></html>`);
   win.document.close();
@@ -1861,55 +937,39 @@ function exportPDF() {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
-function loadSampleDiagram() {
-  const b = {id:makeNodeId(), type:'browser',      x:0,   y:88,  label:'Customer Browser', notes:''};
-  const f = {id:makeNodeId(), type:'firewall',     x:176, y:-22, label:'Perimeter NSC',     notes:''};
-  const w = {id:makeNodeId(), type:'web_server',   x:176, y:88,  label:'E-Commerce Server', notes:''};
-  const g = {id:makeNodeId(), type:'gateway',      x:352, y:88,  label:'Payment Gateway',   notes:''};
-  const t = {id:makeNodeId(), type:'tokenization', x:352, y:-22, label:'Tokenization Vault',notes:''};
-  const d = {id:makeNodeId(), type:'chd_db',       x:528, y:88,  label:'CHD Database',      notes:''};
-  const c = {id:makeNodeId(), type:'card_network', x:528, y:-22, label:'Visa / Mastercard',  notes:''};
-  const h = {id:makeNodeId(), type:'hsm',          x:528, y:198, label:'HSM',               notes:''};
-  S.nodes.push(b, f, w, g, t, d, c, h);
-
-  // CDE zone behind gateway, tokenization, CHD DB, and HSM
-  const cdeZone = {id:makeZoneId(), type:'cde',
-    x:320, y:-60, w:300, h:320, label:'Cardholder Data Environment'};
-  S.zones.push(cdeZone);
-
-  S.edges.push(
-    {id:makeEdgeId(), sourceId:b.id, targetId:w.id, srcPort:'e', tgtPort:'w', type:'encrypted',  label:'PAN (TLS 1.3)', cipherSuite:'TLS 1.3'},
-    {id:makeEdgeId(), sourceId:f.id, targetId:w.id, srcPort:'s', tgtPort:'n', type:'generic',    label:''},
-    {id:makeEdgeId(), sourceId:w.id, targetId:g.id, srcPort:'e', tgtPort:'w', type:'encrypted',  label:'Encrypted PAN'},
-    {id:makeEdgeId(), sourceId:g.id, targetId:t.id, srcPort:'n', tgtPort:'s', type:'tokenized',  label:'Tokenize'},
-    {id:makeEdgeId(), sourceId:t.id, targetId:d.id, srcPort:'e', tgtPort:'w', type:'tokenized',  label:'Token'},
-    {id:makeEdgeId(), sourceId:g.id, targetId:c.id, srcPort:'n', tgtPort:'w', type:'auth',       label:'Auth Request'},
-    {id:makeEdgeId(), sourceId:g.id, targetId:h.id, srcPort:'s', tgtPort:'n', type:'encrypted',  label:'Key Request'},
-  );
-  renderAll(); fitView();
-  setTimeout(() => {
-    hint('👋 Sample diagram loaded! Drag from port dots to connect • Shift+drag to multi-select • Double-click to edit labels');
-    setTimeout(() => hint(), 8000);
-  }, 300);
-}
-
 function init() {
   initDefs();
   buildSidebar();
+  const r = $('canvas-svg').getBoundingClientRect();
+  S.pan = { x: r.width/2 - 300, y: r.height/2 - 150 };
   updateVP();
-  updateHistoryButtons();
 
-  // Wait for canvas to have real dimensions before centering & loading sample
-  const ro = new ResizeObserver(entries => {
-    const r = entries[0].contentRect;
-    if (r.width > 0 && r.height > 0) {
-      ro.disconnect();
-      S.pan = { x: r.width/2 - 340, y: r.height/2 - 140 };
-      updateVP();
-      loadSampleDiagram();
-    }
-  });
-  ro.observe($('canvas-svg'));
+  // Load sample e-commerce CHD flow
+  setTimeout(() => {
+    const b = {id:mkId('n'), type:'browser',      x:0,   y:80,  label:'Customer Browser', notes:''};
+    const f = {id:mkId('n'), type:'firewall',     x:175, y:-20, label:'Perimeter Firewall', notes:''};
+    const w = {id:mkId('n'), type:'web_server',   x:175, y:80,  label:'E-Commerce Server', notes:''};
+    const g = {id:mkId('n'), type:'gateway',      x:360, y:80,  label:'Payment Gateway', notes:''};
+    const t = {id:mkId('n'), type:'tokenization', x:360, y:-20, label:'Tokenization Vault', notes:''};
+    const d = {id:mkId('n'), type:'chd_db',       x:550, y:80,  label:'CHD Database', notes:''};
+    const c = {id:mkId('n'), type:'card_network', x:550, y:-20, label:'Visa / Mastercard', notes:''};
+    const h = {id:mkId('n'), type:'hsm',          x:550, y:185, label:'HSM', notes:''};
+    S.nodes.push(b, f, w, g, t, d, c, h);
+    S.edges.push(
+      {id:mkId('e'), sourceId:b.id, targetId:w.id, srcPort:'e', tgtPort:'w', type:'encrypted',  label:'PAN (TLS 1.3)'},
+      {id:mkId('e'), sourceId:f.id, targetId:w.id, srcPort:'s', tgtPort:'n', type:'generic',    label:''},
+      {id:mkId('e'), sourceId:w.id, targetId:g.id, srcPort:'e', tgtPort:'w', type:'encrypted',  label:'Encrypted PAN'},
+      {id:mkId('e'), sourceId:g.id, targetId:t.id, srcPort:'n', tgtPort:'s', type:'tokenized',  label:'Tokenize'},
+      {id:mkId('e'), sourceId:t.id, targetId:d.id, srcPort:'e', tgtPort:'w', type:'tokenized',  label:'Token'},
+      {id:mkId('e'), sourceId:g.id, targetId:c.id, srcPort:'n', tgtPort:'w', type:'auth',       label:'Auth Request'},
+      {id:mkId('e'), sourceId:g.id, targetId:h.id, srcPort:'s', tgtPort:'n', type:'encrypted',  label:'Key Request'},
+    );
+    renderAll(); fitView();
+    setTimeout(() => {
+      hint('👋 Sample diagram loaded! Click a component in the sidebar to add more.');
+      setTimeout(() => hint(), 6000);
+    }, 400);
+  }, 100);
 }
 
 init();
