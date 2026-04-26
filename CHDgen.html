@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'">
 <title>CHDgen - PCI Data Flow Builder</title>
 <style>
 :root { color-scheme: light; }
@@ -198,6 +199,11 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
 .ver-del { background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 13px; padding: 0 4px; }
 .ver-del:hover { color: #dc2626; }
 
+/* ── Validation ──────────────────────────────────────────────────── */
+.validation-list { padding: 9px; background: #fef2f2; border-radius: 6px; margin: 12px 0; }
+.validation-item { padding: 5px 0; font-size: 11px; color: #991b1b; line-height: 1.5; }
+.validation-item-ok { color: #166534; }
+
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 </style>
@@ -227,6 +233,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
   <button class="tbtn" onclick="exportPDF()">↓ PDF</button>
   <div class="tsep"></div>
   <button class="tbtn" onclick="openNarrative()" title="Diagram narrative &amp; version control">📝 Narrative</button>
+  <button class="tbtn" onclick="showValidation()" title="Check for security issues">✓ Validate</button>
   <div class="tsep"></div>
   <button class="tbtn" onclick="zoomOut()">－</button>
   <span class="zoom-lbl" id="zoomLbl">100%</span>
@@ -241,6 +248,8 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
 
   <div id="canvas-wrap">
     <svg id="canvas-svg" xmlns="http://www.w3.org/2000/svg" aria-label="PCI data flow diagram canvas" role="img">
+      <title>PCI DSS Cardholder Data Flow Diagram</title>
+      <desc>Interactive diagram for visualizing data flows between systems and identifying PCI DSS scope</desc>
       <defs id="svg-defs"></defs>
       <rect id="canvas-bg" fill="transparent" width="100%" height="100%"/>
       <g id="viewport">
@@ -329,7 +338,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
   <div class="cx-sep"></div>
   <div class="cx-item danger" onclick="ctxDelete()">🗑 Delete</div>
 </div>
-<div id="toast"></div>
+<div id="toast" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 'use strict';
@@ -338,6 +347,12 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; colo
 const NW = 145, NH = 68, GRID = 22, MAX_HIST = 50;
 const NS = 'http://www.w3.org/2000/svg';
 const CATS = ['Actors','Devices','Systems','Security','Storage','External'];
+const DRAG_THRESHOLD = 2;      // pixels
+const CLICK_THRESHOLD = 4;     // pixels for box-select
+const RENDER_DEBOUNCE = 16;    // ms (60fps)
+const EDGE_LABEL_PAD = 12;     // edge label background padding
+const PORT_HOVER_RADIUS = 8;   // pixels for port detection
+const ZONE_MIN_W = 80, ZONE_MIN_H = 60;
 
 // Node type registry
 const NT = {
@@ -426,6 +441,15 @@ const $ = id => document.getElementById(id);
 
 function snap(v) { return S.snapGrid ? Math.round(v / GRID) * GRID : v; }
 
+// Debounce helper for mousemove rendering
+let _renderTimeout;
+function debouncedRender() {
+  clearTimeout(_renderTimeout);
+  _renderTimeout = setTimeout(() => {
+    renderAll();
+  }, RENDER_DEBOUNCE);
+}
+
 function svgCoord(sx, sy) {
   const r = $('canvas-svg').getBoundingClientRect();
   return { x:(sx - r.left - S.pan.x) / S.zoom, y:(sy - r.top - S.pan.y) / S.zoom };
@@ -495,7 +519,9 @@ function makeZoneId() { return 'z' + (S.zid++); }
 
 function toast(msg, dur=2200) {
   const t = $('toast');
-  t.textContent = msg; t.classList.add('show');
+  t.textContent = msg;
+  t.setAttribute('role', 'status');
+  t.classList.add('show');
   clearTimeout(t._t);
   t._t = setTimeout(() => t.classList.remove('show'), dur);
 }
@@ -790,7 +816,11 @@ function updZoneEl(g, zone) {
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 function buildSidebar() {
   const sb = $('sidebar');
-  let h = '';
+  let h = `<div style="padding:8px 6px;border-bottom:1px solid #f1f5f9;sticky:top;z-index:10">
+    <input id="sidebar-search" type="text" placeholder="Search components..." 
+           style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:6px 8px;font-size:11px;box-sizing:border-box"
+           onkeyup="filterSidebar(this.value)"/>
+  </div><div id="sidebar-content">`;
 
   // Component nodes by category
   for (const cat of CATS) {
@@ -798,7 +828,7 @@ function buildSidebar() {
     if (!items.length) continue;
     h += `<div class="cat-hdr">${esc(cat)}</div>`;
     for (const [k, nt] of items) {
-      h += `<div class="sitem" data-type="${esc(k)}" data-kind="node">
+      h += `<div class="sitem" data-type="${esc(k)}" data-kind="node" data-search="${esc((k+' '+nt.label).toLowerCase())}">
         <div class="sitem-ic" style="background:${esc(nt.color)}18">${esc(nt.emoji)}</div>
         <div class="sitem-lbl">${esc(nt.label)}</div>
       </div>`;
@@ -808,12 +838,13 @@ function buildSidebar() {
   // Boundary zones section
   h += `<div class="cat-hdr">Boundary Zones</div>`;
   for (const [k, zt] of Object.entries(ZT)) {
-    h += `<div class="sitem" data-zone="${esc(k)}" data-kind="zone">
+    h += `<div class="sitem" data-zone="${esc(k)}" data-kind="zone" data-search="${esc((k+' '+zt.label).toLowerCase())}">
       <div class="sitem-ic" style="background:${esc(zt.color)}22;border:1.5px dashed ${esc(zt.border)};border-radius:3px"></div>
       <div class="sitem-lbl">${esc(zt.label)}</div>
     </div>`;
   }
 
+  h += '</div>';
   sb.innerHTML = h;
 
   // Attach click handlers (avoids inline handlers with unescaped data)
@@ -823,6 +854,46 @@ function buildSidebar() {
   sb.querySelectorAll('.sitem[data-kind="zone"]').forEach(el => {
     el.addEventListener('click', () => startZone(el.dataset.zone));
   });
+}
+
+function filterSidebar(query) {
+  const q = query.toLowerCase();
+  const items = document.querySelectorAll('#sidebar-content .sitem');
+  let hiddenAll = true;
+  
+  items.forEach(el => {
+    const search = el.dataset.search || '';
+    const matches = search.includes(q) && q.length > 0 || q.length === 0;
+    el.style.display = matches ? '' : 'none';
+    if (matches) hiddenAll = false;
+  });
+  
+  // Show/hide category headers based on visible items
+  document.querySelectorAll('#sidebar-content .cat-hdr').forEach(hdr => {
+    let hasVisibleItems = false;
+    let next = hdr.nextElementSibling;
+    while (next && !next.classList.contains('cat-hdr')) {
+      if (next.classList.contains('sitem') && next.style.display !== 'none') {
+        hasVisibleItems = true; break;
+      }
+      next = next.nextElementSibling;
+    }
+    hdr.style.display = hasVisibleItems ? '' : 'none';
+  });
+  
+  // Show "no results" message if needed
+  let noResults = document.getElementById('sidebar-no-results');
+  if (hiddenAll && q.length > 0) {
+    if (!noResults) {
+      noResults = document.createElement('div');
+      noResults.id = 'sidebar-no-results';
+      noResults.style.cssText = 'padding:12px 8px;color:#94a3b8;font-size:11px;text-align:center';
+      document.getElementById('sidebar-content').appendChild(noResults);
+    }
+    noResults.textContent = `No components match "${esc(query)}"`;
+  } else if (noResults) {
+    noResults.remove();
+  }
 }
 
 function startPlace(type) {
@@ -1026,12 +1097,99 @@ function updZone(key, val) {
   if (zone) { zone[key] = val; renderZones(); showProps(); }
 }
 
+// ─── DIAGRAM VALIDATION ───────────────────────────────────────────────────────
+function validateDiagram() {
+  const issues = [];
+  
+  // Check for unencrypted PAN flows
+  S.edges.forEach(edge => {
+    if (edge.type === 'pan') {
+      const src = S.nodes.find(n => n.id === edge.sourceId);
+      const tgt = S.nodes.find(n => n.id === edge.targetId);
+      issues.push(`🚨 UNENCRYPTED PAN FLOW: ${src?.label || 'Unknown'} → ${tgt?.label || 'Unknown'} — violates Req 4.2.1`);
+    }
+  });
+  
+  // Check if SAD flows into storage
+  S.edges.forEach(edge => {
+    if (edge.type === 'sad') {
+      const tgtNode = S.nodes.find(n => n.id === edge.targetId);
+      const storageTypes = ['chd_db', 'backup', 'log_server'];
+      if (tgtNode && storageTypes.includes(tgtNode.type)) {
+        issues.push(`🚨 CRITICAL: SAD flowing into ${NT[tgtNode.type].label} — violates Req 3.3.1`);
+      }
+    }
+  });
+  
+  // Check for nodes without connections
+  const connectedNodes = new Set();
+  S.edges.forEach(e => {
+    connectedNodes.add(e.sourceId);
+    connectedNodes.add(e.targetId);
+  });
+  S.nodes.forEach(node => {
+    if (!connectedNodes.has(node.id)) {
+      issues.push(`⚠️ ISOLATED: ${node.label || NT[node.type].label} has no connections`);
+    }
+  });
+  
+  return issues;
+}
+
+function showValidation() {
+  const issues = validateDiagram();
+  let html = '';
+  
+  if (issues.length === 0) {
+    html = '<div class="validation-item validation-item-ok">✅ No critical issues detected. Diagram looks good!</div>';
+  } else {
+    html = '<div class="validation-list">';
+    issues.forEach(issue => {
+      html += `<div class="validation-item">${esc(issue)}</div>`;
+    });
+    html += '</div>';
+  }
+  
+  const content = $('props-content');
+  const hdr = $('props-hdr');
+  hdr.textContent = `Validation (${issues.length})`;
+  content.innerHTML = `<div class="props-sect">${html}</div>`;
+  
+  const panel = $('props');
+  panel.classList.add('show');
+  toast(`Diagram validation: ${issues.length} issue${issues.length !== 1 ? 's' : ''}`);
+}
+
 // ─── NARRATIVE / VERSION CONTROL ──────────────────────────────────────────────
 function openNarrative() {
   const m = $('narrative-modal');
   m.classList.remove('hide');
   $('nar-ta').value  = S.meta.narrative || '';
   $('nar-ver').value = S.meta.version   || '1.0';
+  
+  // Show validation issues in narrative modal
+  const issues = validateDiagram();
+  let validationHtml = '';
+  if (issues.length > 0) {
+    validationHtml = `<div class="m-label">Diagram Issues</div><div class="validation-list">`;
+    issues.forEach(issue => {
+      validationHtml += `<div class="validation-item">${esc(issue)}</div>`;
+    });
+    validationHtml += '</div>';
+  }
+  
+  const modal = $('narrative-modal');
+  const bodyBefore = modal.querySelector('.modal-body');
+  let issuesDiv = modal.querySelector('#validation-issues');
+  if (!issuesDiv && validationHtml) {
+    issuesDiv = document.createElement('div');
+    issuesDiv.id = 'validation-issues';
+    bodyBefore.insertBefore(issuesDiv, bodyBefore.firstChild);
+  }
+  if (issuesDiv) {
+    issuesDiv.innerHTML = validationHtml;
+  }
+  
   renderVerTable();
 }
 
@@ -1312,7 +1470,7 @@ $('canvas-svg').addEventListener('mousemove', e => {
     const dx  = pos.x - S.dragging.mx;
     const dy  = pos.y - S.dragging.my;
 
-    if (!S.dragging.hasMoved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
+    if (!S.dragging.hasMoved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
       S.dragging.hasMoved = true;
     }
 
@@ -1361,7 +1519,7 @@ $('canvas-svg').addEventListener('mousemove', e => {
     const x = Math.min(pos.x, S.boxSelect.sx), y = Math.min(pos.y, S.boxSelect.sy);
     const w = Math.abs(pos.x - S.boxSelect.sx), h = Math.abs(pos.y - S.boxSelect.sy);
     const br = $('box-select-rect');
-    if (w > 4 || h > 4) {
+    if (w > CLICK_THRESHOLD || h > CLICK_THRESHOLD) {
       br.setAttribute('x', x); br.setAttribute('y', y);
       br.setAttribute('width', w); br.setAttribute('height', h);
       br.style.display = '';
@@ -1417,8 +1575,8 @@ $('canvas-svg').addEventListener('mouseup', e => {
     const pos = svgCoord(e.clientX, e.clientY);
     const x   = snap(Math.min(pos.x, S.zoneDraw.sx));
     const y   = snap(Math.min(pos.y, S.zoneDraw.sy));
-    const w   = Math.max(80, snap(Math.abs(pos.x - S.zoneDraw.sx)));
-    const h   = Math.max(60, snap(Math.abs(pos.y - S.zoneDraw.sy)));
+    const w   = Math.max(ZONE_MIN_W, snap(Math.abs(pos.x - S.zoneDraw.sx)));
+    const h   = Math.max(ZONE_MIN_H, snap(Math.abs(pos.y - S.zoneDraw.sy)));
     $('zone-preview-rect').style.display = 'none';
     addZone(S.zoneDraw.type, x, y, w, h);
     S.zoneDraw = null;
