@@ -1,0 +1,26 @@
+{
+  "nodes": [
+    {"id":"n1","type":"cardholder",   "x":0,   "y":160, "label":"Cardholder",           "notes":"Consumer initiating payment via mobile app or digital wallet."},
+    {"id":"n2","type":"mobile",       "x":190, "y":160, "label":"Mobile App",            "notes":"Req 6: Secure mobile app development. Certificate pinning, no CHD in local storage."},
+    {"id":"n3","type":"load_balancer","x":380, "y":40,  "label":"WAF / CDN",             "notes":"Req 6.4: WAF inspection for all internet-facing APIs. TLS termination at CDN edge."},
+    {"id":"n4","type":"api_server",   "x":380, "y":160, "label":"API Gateway",           "notes":"Req 6: API authentication (OAuth 2.0 / mTLS). Rate limiting. No PAN logged."},
+    {"id":"n5","type":"gateway",      "x":570, "y":160, "label":"Payment Processor",     "notes":"Req 4.2.1: Encrypt PAN across all open networks. TLS 1.2+ minimum."},
+    {"id":"n6","type":"tokenization", "x":570, "y":40,  "label":"Token Vault",           "notes":"Network token (EMVCo) or PSP token replaces PAN. Significantly reduces scope."},
+    {"id":"n7","type":"card_network", "x":760, "y":40,  "label":"Card Network",          "notes":"External. Network tokenization service (NTS) may be operated by card brand."},
+    {"id":"n8","type":"chd_db",       "x":760, "y":160, "label":"Token Database",        "notes":"Req 3.3: Stores network tokens only. PAN never written to disk by merchant."},
+    {"id":"n9","type":"iss_bank",     "x":760, "y":280, "label":"Issuing Bank",          "notes":"External — cardholder's bank. Performs authorisation decisioning."}
+  ],
+  "edges": [
+    {"id":"e1","sourceId":"n1","targetId":"n2","srcPort":"e","tgtPort":"w","type":"generic",   "label":"NFC / Biometric"},
+    {"id":"e2","sourceId":"n2","targetId":"n3","srcPort":"n","tgtPort":"s","type":"encrypted", "label":"HTTPS TLS 1.3"},
+    {"id":"e3","sourceId":"n3","targetId":"n4","srcPort":"s","tgtPort":"n","type":"generic",   "label":"WAF filtered"},
+    {"id":"e4","sourceId":"n4","targetId":"n5","srcPort":"e","tgtPort":"w","type":"encrypted", "label":"Encrypted PAN"},
+    {"id":"e5","sourceId":"n5","targetId":"n6","srcPort":"n","tgtPort":"s","type":"tokenized", "label":"Tokenize"},
+    {"id":"e6","sourceId":"n6","targetId":"n7","srcPort":"e","tgtPort":"w","type":"auth",      "label":"Token Auth"},
+    {"id":"e7","sourceId":"n6","targetId":"n8","srcPort":"s","tgtPort":"n","type":"tokenized", "label":"Token stored"},
+    {"id":"e8","sourceId":"n7","targetId":"n9","srcPort":"s","tgtPort":"n","type":"auth",      "label":"Auth Response"},
+    {"id":"e9","sourceId":"n5","targetId":"n8","srcPort":"e","tgtPort":"w","type":"tokenized", "label":"Store token"}
+  ],
+  "pan":{"x":60,"y":80},
+  "zoom":0.95
+}
