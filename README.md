@@ -93,7 +93,7 @@ Encrypted PAN connections expose a cipher suite selector with common TLS 1.2/1.3
 
 The Properties panel surfaces relevant requirements based on what is selected.
 
-| Component or Flow | Guidance surfaced |
+| Component or Flow | Guidance |
 |---|---|
 | CHD Database | Encrypt at rest (Req 3.5); minimise stored data |
 | POS Terminal, Card Reader | PTS validation and tamper protection (Req 9.3) |
