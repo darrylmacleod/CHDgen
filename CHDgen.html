@@ -863,10 +863,10 @@ function getCleanSVG() {
   const r = orig.getBoundingClientRect();
   cl.setAttribute('width', r.width); cl.setAttribute('height', r.height);
 
-  // Reset the viewport transform and set a viewBox based on actual node bounds.
-  // Keeping the live pan/zoom transform in exported SVG breaks marker sizing because
-  // markerUnits="userSpaceOnUse" sizes arrows in the raw coordinate system — the
-  // transform must be stripped so the viewBox drives scaling instead.
+  // Compute content bounds, set viewBox and matching width/height so the SVG's
+  // intrinsic size equals the diagram content (no letterboxing, 1:1 scale).
+  // Strip the live pan/zoom transform — viewBox handles framing for exports.
+  let expW = r.width, expH = r.height;
   if (S.nodes.length) {
     const pad = 50;
     let mnx = Infinity, mny = Infinity, mxx = -Infinity, mxy = -Infinity;
@@ -874,12 +874,16 @@ function getCleanSVG() {
       mnx = Math.min(mnx, n.x);      mny = Math.min(mny, n.y);
       mxx = Math.max(mxx, n.x + NW); mxy = Math.max(mxy, n.y + NH);
     }
-    cl.setAttribute('viewBox', `${mnx-pad} ${mny-pad} ${mxx-mnx+pad*2} ${mxy-mny+pad*2}`);
+    expW = mxx - mnx + pad * 2;
+    expH = mxy - mny + pad * 2;
+    cl.setAttribute('viewBox', `${mnx-pad} ${mny-pad} ${expW} ${expH}`);
+    cl.setAttribute('width',  expW);
+    cl.setAttribute('height', expH);
     const vp = cl.querySelector('#viewport');
     if (vp) vp.setAttribute('transform', '');
   }
 
-  return { svgStr: new XMLSerializer().serializeToString(cl), w: r.width, h: r.height };
+  return { svgStr: new XMLSerializer().serializeToString(cl), w: expW, h: expH };
 }
 
 function exportSVG() {
@@ -914,26 +918,46 @@ function exportPNG() {
 }
 
 function exportPDF() {
-  const {svgStr} = getCleanSVG();
-  const win = window.open('', '_blank');
-  if (!win) { toast('Allow popups for PDF export'); return; }
-  win.document.write(`<!DOCTYPE html><html><head><title>CHD Flow Diagram</title>
-  <style>
-    body { margin:20px; font-family:sans-serif; background:#fff; }
-    h2   { font-size:15px; margin-bottom:4px; color:#1e293b; }
-    p    { font-size:10px; color:#64748b; margin-bottom:14px; }
-    svg  { max-width:100%; border:1px solid #e2e8f0; border-radius:6px; }
-    .btn { margin-top:14px; padding:7px 16px; background:#1e293b; color:#fff; border:none; border-radius:5px; cursor:pointer; font-size:12px; }
-    @media print { .btn { display:none; } }
-  </style></head><body>
-  <h2>PCI DSS Cardholder Data Flow Diagram</h2>
-  <p>Generated: ${new Date().toLocaleDateString()} — For PCI DSS compliance documentation</p>
-  ${svgStr}
-  <br/>
-  <button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button>
-  </body></html>`);
-  win.document.close();
-  toast('Print window opened ✓');
+  // Chrome's print-to-PDF renderer does not reliably resolve url(#id) fragment
+  // references inside inline SVG (markers, filters, clip-paths all silently break).
+  // Fix: render the SVG to a canvas first — the canvas SVG renderer handles url(#)
+  // correctly — then embed the resulting PNG bitmap in the print window instead.
+  const {svgStr, w, h} = getCleanSVG();
+  const url = URL.createObjectURL(new Blob([svgStr], {type:'image/svg+xml'}));
+  const img = new Image();
+  img.onload = () => {
+    const sc = 2; // 2× for crisp retina/print quality
+    const c = document.createElement('canvas');
+    c.width = w * sc; c.height = h * sc;
+    const ctx = c.getContext('2d');
+    ctx.scale(sc, sc);
+    ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+    URL.revokeObjectURL(url);
+    const dataUrl = c.toDataURL('image/png');
+    const win = window.open('', '_blank');
+    if (!win) { toast('Allow popups for PDF export'); return; }
+    win.document.write(`<!DOCTYPE html><html><head><title>CHD Flow Diagram</title>
+<style>
+  @page  { size:auto; margin:12mm; }
+  body   { margin:0; padding:16px; font-family:sans-serif; background:#fff; }
+  h2     { font-size:14px; margin:0 0 3px; color:#1e293b; }
+  p      { font-size:9px; color:#64748b; margin:0 0 12px; }
+  img    { max-width:100%; display:block; border:1px solid #e2e8f0; border-radius:4px; }
+  .btn   { margin-top:12px; padding:6px 14px; background:#1e293b; color:#fff;
+           border:none; border-radius:5px; cursor:pointer; font-size:11px; }
+  @media print { .btn { display:none; } }
+</style></head><body>
+<h2>PCI DSS Cardholder Data Flow Diagram</h2>
+<p>Generated: ${new Date().toLocaleDateString()} — For PCI DSS compliance documentation</p>
+<img src="${dataUrl}" alt="CHD Flow Diagram"/>
+<br/><button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button>
+</body></html>`);
+    win.document.close();
+    toast('Print window opened ✓');
+  };
+  img.onerror = () => { toast('PDF export failed — try PNG'); URL.revokeObjectURL(url); };
+  img.src = url;
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
